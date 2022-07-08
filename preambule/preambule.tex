@@ -1,0 +1,32 @@
+%%%% PREAMBULE MAIN FILE %%%%
+
+%%% INFORMATIONS %%%
+
+% last update 04/2022
+
+%%% CONDITIONNING %%%
+
+\input{preambule/config.tex}
+
+\usepackage{ifthen}
+
+% \newcommand\documentisfrench{}
+\newcommand\fr[2]{\ifthenelse{\isundefined{\documentisfrench}}{#2}{#1}}
+
+% \newcommand\documentisbeamer{}
+\newcommand\ifbeamer[2]{\ifthenelse{\isundefined{\documentisbeamer}}{#2}{#1}}
+
+% \newcommand\documentissansserif{}
+\newcommand\sans[2]{\ifthenelse{\isundefined{\documentissansserif}}{#2}{#1}}
+
+%%% FILES %%%
+
+\input{preambule/packages}
+
+\ifbeamer{
+  \input{preambule/beamer}
+}{}
+
+\input{preambule/macros}
+
+\input{preambule/maths}

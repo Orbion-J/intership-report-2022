@@ -1,0 +1,85 @@
+%%%% PREAMBULE MACROS FILE %%%%
+
+
+\PassOptionsToPackage{svgnames}{color}
+
+
+% Espace automatique après un guillemet fermant
+\fr{
+  \renewcommand{\fg}{\fg\xspace}
+}{}
+
+%% parenthèses, crochets & accolades qui s'adaptent à la taille de ce qu'il y a à l'intérieur
+\newcommand{\ap}[1]{\left(#1\right)}        % auto parenthesis
+\newcommand{\ab}[1]{\left[#1\right]}        % auto bracket
+\newcommand{\acb}[1]{\left\{#1\right\}}     % auto curly bracket
+
+
+%% Puces pour les listes
+\setitemize[1]{label=$\diamond$}
+\setitemize[2]{label=$\circ$}
+\setitemize[3]{label=$\star$}
+
+\setenumerate[1]{label=\arabic*.}
+\setenumerate[2]{label=\theenumi\arabic*.}
+\setenumerate[3]{label=\theenumii\arabic*.}
+\setenumerate[4]{label=\theenumiii\arabic*.}
+% \setenumerate[2]{label=\alph*.}
+% \setenumerate[3]{label=\roman*.}
+
+% style d'item description
+\renewcommand{\descriptionlabel}[1]{%
+  \hspace\labelsep \upshape\bfseries \textit{#1}%
+}
+
+
+% point median
+\newcommand\ptm\textperiodcentered
+
+%soulignement
+\newcommand\ul\underline
+
+
+% panneau attention
+\newcommand\danger{
+    \makebox[1em]{
+        \makebox[0pt][s]{
+            % \raisebox{.1em}
+            {\footnotesize !}
+        }
+        \makebox[0pt]{
+          \raisebox{-0.1em}
+          {\color{red}\Large$\bigtriangleup$}
+        }
+    }
+}
+
+
+%% écrire une remarque
+\newcommand{\rk}[1]{$\rhd$ \textbf{Remar\fr{que}{k}} \emph{#1} }
+\newcommand{\qrk}[1]{$\rhd$ \emph{#1} } % quick remark : pas de texte
+
+
+% encadre le texte passe en parametre sur toute la largeur de la page
+\newcommand{\longbox}[1]{
+    \begin{center}\fbox{\parbox{\textwidth}{
+        #1
+    }}\end{center}
+}
+
+
+%% signatures
+% manuscrite + nom dessous
+\newcommand{\sign}
+{\includegraphics{preambule/signature_rj_small.png}\\ Robin \bsc{Jourde}}
+% manuscrite + nom aligné à droite
+\newcommand{\rsign}{\begin{flushright}\sign\end{flushright}}
+% nom
+\newcommand{\qsign}{Robin \bsc{Jourde}}
+% nom aligné à droite
+\newcommand{\rqsign}{\begin{flushright}\qsign\end{flushright}}
+
+
+
+% email
+\newcommand{\mailto}[1]{\href{mailto:#1}{\texttt{#1}}}

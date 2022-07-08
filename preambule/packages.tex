@@ -1,0 +1,69 @@
+%%%% PREAMBULE PACKAGES FILE %%%%
+
+%%% FONTS %%%
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\fr{
+  \usepackage[french]{babel}
+}{}
+
+\usepackage{CJKutf8}            % chinese, japanese, corean
+%\usepackage{numprint}          % pretty digits
+
+%% fourrier
+%\usepackage{fourier}
+%\usepackage[scaled=0.875]{helvet}
+%\usepackage{courier}
+
+%% sans serif
+\sans{
+  \usepackage{cmbright}
+  \renewcommand{\familydefault}{\sfdefault}
+}{}
+
+
+
+%%% MISE EN PAGE %%%
+\ifbeamer{}{
+  \usepackage[a4paper]{geometry}
+  \geometry{hscale=0.8,vscale=0.8,centering}
+}
+
+
+
+%%% UTILITIES %%%
+\usepackage{xcolor}         % couleur
+\usepackage{xspace}         % espace automatique
+
+\usepackage{xurl}           % Pour citer les adresses web
+\usepackage{hyperref}       % Liens
+
+\usepackage{stackengine}    % Empiler du texte
+
+\usepackage{minted}         % inclusion de code
+
+\usepackage{alltt}          % verbatim avec commandes
+
+\usepackage{enumitem}       % listes
+
+
+
+%%% TABLES %%%
+\usepackage{multirow}       % fusion de ligne dans les tableaux
+\usepackage{booktabs}       % Allows the use of \toprule, \midrule and \bottomrule in tables
+
+
+
+%%% IMAGES %%%
+\usepackage{graphicx} % inclusion des graphiques
+\usepackage{wrapfig}  % Dessins dans le texte.
+
+\usepackage{tikz}
+\usetikzlibrary{cd}             % commutative diagrams via https://tikzcd.yichuanshen.de/
+\usepackage[framemethod=TikZ]{mdframed}
+
+
+
+%%% TREES %%%
+\usepackage[linguistics]{forest}

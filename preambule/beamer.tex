@@ -1,0 +1,118 @@
+%%%% PREAMBULE BEAMER FILE %%%%
+
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+
+\mode<presentation> {
+
+  % The Beamer class comes with a number of default slide themes
+  % which change the colors and layouts of slides. Below this is a list
+  % of all the themes, uncomment each in turn to see what they look like.
+
+  % \usetheme{AnnArbor}
+  % \usetheme{Antibes}
+  % \usetheme{Bergen}
+  % \usetheme{Berkeley}
+  % \usetheme{Berlin}
+  % \usetheme{Darmstadt}
+  % \usetheme{Dresden}
+  % \usetheme{Frankfurt}
+  % \usetheme{Goettingen}
+  % \usetheme{Hannover}
+  % \usetheme{Ilmenau}
+  % \usetheme{JuanLesPins}
+  % \usetheme{Marburg}
+  % \usetheme{Montpellier}
+  % \usetheme{PaloAlto}
+  % \usetheme{Pittsburgh}
+  % \usetheme{Rochester}
+  % \usetheme{Singapore}
+  % \usetheme{Szeged}
+
+  % \usetheme{default}       % rien (cadre carré)
+  % \usetheme{Boadilla}      % bas3
+  \usetheme{CambridgeUS}   % bas3 + haut2
+  % \usetheme{Copenhagen}    % bas2
+  % \usetheme{Luebeck}       % bas2 + haut2 (cadre/puces carré)
+  % \usetheme{Madrid}        % = Boadilla
+  % \usetheme{Malmoe}        % = Luebeck
+  % \usetheme{Warsaw}        % bas2 + cardes ombre
+
+  % As well as themes, the Beamer class has a number of color themes
+  % for any slide theme. Uncomment each of these in turn to see how it
+  % changes the colors of your current slide theme.
+
+  % \usecolortheme{albatross}
+  % \usecolortheme{beaver}
+  % \usecolortheme{beetle}
+  % \usecolortheme{crane}
+  % \usecolortheme{dove}
+  % \usecolortheme{fly}
+  % \usecolortheme{lily}
+  % \usecolortheme{orchid}
+  % \usecolortheme{rose}
+  % \usecolortheme{seagull}
+  % \usecolortheme{whale}
+  % \usecolortheme{wolverine}
+
+  % \usecolortheme{dolphin}
+  \usecolortheme{seahorse}
+
+  % \setbeamertemplate{footline} % To remove the footer line in all slides uncomment this line
+  % \setbeamertemplate{footline}[frame number] % To replace the footer line in all slides with a simple slide count uncomment this line
+
+  % \setbeamertemplate{navigation symbols}{} % To remove the navigation symbols from the bottom of all slides uncomment this line
+
+  % \setbeamercovered{transparent} % Fait apparaître les animations en grisé (utile pour la conception, mais peut être commenté lors de la remise du document final)
+
+  % Pour utiliser une police à empattements partout
+  % \usefonttheme{serif}
+
+  % Pour rajouter la numérotation des frames dans les pieds de page
+  % \newcommand*\oldmacro{}%
+  % \let\oldmacro\insertshorttitle%
+  % \renewcommand*\insertshorttitle{%
+  % \oldmacro\hfill%
+  % \insertframenumber\,/\,\inserttotalframenumber}
+
+
+  % section/subsection
+  \setbeamertemplate{section in toc}{%
+    \quad ({\inserttocsectionnumber})~{\inserttocsection}%
+  }
+  \setbeamertemplate{subsection in toc}{%
+    \quad\quad $\rhd$~{\inserttocsubsection} \\%
+  }
+
+  \setbeamertemplate{navigation symbols}{} % remove nav bar
+
+}
+
+% table des matieres (à paramétrer selon le document)
+\setcounter{tocdepth}{2}
+
+\newcommand\tocpage{
+  \begin{frame}
+    \tableofcontents[firstsection = 2 , currentsubsection]
+  \end{frame}
+}
+
+
+%% arbres dans beamer (forest)
+% permet d'utiliser onslide=<>{} pour animer les arbres (beamer)
+\tikzset{onslide/.code args={<#1>#2}{
+    \only<#1>{\pgfkeysalso{#2}}
+  }}
+
+\tikzset{
+  invisible/.style={text opacity=0, draw opacity = 0},
+  visible on/.style={alt=#1{}{invisible}},
+  alt/.code args={<#1>#2#3}{%
+    \alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}} % \pgfkeysalso doesn't change the path
+  },
+}
+\forestset{
+  visible on/.style={
+    for tree={
+      /tikz/visible on={#1},
+      edge+={/tikz/visible on={#1}}}}}

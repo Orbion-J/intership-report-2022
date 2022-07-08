@@ -1,0 +1,129 @@
+%%% PACKAGES %%%
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{mathrsfs}
+\usepackage{amsfonts}
+
+\usepackage{amsthm}         % theoremes et preuves
+\usepackage{bussproofs}     % preuves en déduction nat et autres règles
+
+\DeclareMathAlphabet{\varmathbb}{U}{bbold}{m}{n} % mathbb pour les chiffres
+
+
+%%% LETTRES GRECQUES %%%
+\renewcommand\phi{\varphi}
+\renewcommand\epsilon{\varepsilon}
+
+
+
+%%% MACROS %%%
+%% Ensembles gras
+\newcommand\N{\mathbb N}
+\newcommand\Z{\mathbb Z}
+\newcommand\D{\mathbb D}
+\newcommand\Q{\mathbb Q}
+\newcommand\R{\mathbb R}
+\newcommand\C{\mathbb C}
+\newcommand\K{\mathbb K}
+\newcommand\F{\mathbb F}
+\newcommand\E{\mathbb E}
+\renewcommand\P{\mathbb P}
+
+
+%% chiffres gras
+\newcommand\zero{\varmathbb 0}
+\newcommand\one{\varmathbb 1}
+\newcommand\two{\varmathbb 2}
+
+
+
+%% Autres ensembles
+\newcommand\0{\varnothing}
+
+\newcommand\M{\mathscr M}
+\newcommand\MnR{\M_n(\R)}
+\newcommand\MnC{\M_n(\C)}
+\newcommand\MnK{\M_n(\K)}
+
+\newcommand\B{\mathcal B}
+\newcommand\Cl{\mathscr C}
+\newcommand\Fn{\mathscr F}
+
+\newcommand\Sfrak{\mathfrak S}
+
+
+
+%% Opérateurs classiques
+\DeclareMathOperator\id{id}
+\DeclareMathOperator\Vect{Vect}
+\DeclareMathOperator\card{card}
+\DeclareMathOperator\rg{rg}
+\DeclareMathOperator\im{im}
+\DeclareMathOperator\colim{colim}
+
+%% Catégories
+\newcommand\Set{\mathbf{Set}}
+\newcommand\Yo{\!\text{\begin{CJK}{UTF8}{min}よ\end{CJK}}}
+\newcommand\op{{\,^\text{op}}}
+\newcommand{\cattxt}[2]{#1\mathbf{\textbf{-}#2}}
+\newcommand{\nlab}[1]{\href{https://ncatlab.org/nlab/show/#1}{[\fr{voir sur le}{see on} nlab]}}
+
+\DeclareMathOperator\st{st}
+\DeclareMathOperator\ob{ob}
+\DeclareMathOperator\Ran{Ran}
+\DeclareMathOperator\Lan{Lan}
+\DeclareMathOperator\Kl{Kl}
+\DeclareMathOperator\Hom{Hom}
+
+%% Divers
+
+% equivalent
+\newcommand{\eq}[1]{\underset{#1}{\sim}}
+
+% fleche de limite
+\newcommand{\tend}[2]{\underset{#1 \to #2}{\longrightarrow}} 
+
+% definition d'une fonction
+\newcommand{\func}[4]{
+    \ \begin{array}{|lll}
+        #1 &\longrightarrow& #2 \\
+        #3 &\longmapsto& #4
+    \end{array}
+}
+
+%bijection
+\newcommand\bij{\xrightarrow{\sim}}
+
+%autres fleches
+\newcommand{\xto}[1]{\xrightarrow{#1}}
+\newcommand\too{\multimap}
+
+\newcommand\from{\leftarrow}
+\newcommand\mapsfrom{\mathrel{\reflectbox{\ensuremath{\mapsto}}}}
+
+%d rond
+\newcommand\drond{\partial}
+
+% carre de fin de preuve
+\renewcommand\qedsymbol{$\square$}
+\newcommand\cqfd{\begin{flushright}\qedsymbol\end{flushright}}
+
+%% Theoremes FR
+\theoremstyle{plain}
+\newtheorem{thm}{\fr{Théorème}{Theorem}}[section]
+\newtheorem{lem}[thm]{Lemm\fr{e}{a}}
+\newtheorem{cor}[thm]{Corolla\fr{ire}{ry}}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{obj}{\fr{Objectif}{Goal}}
+
+
+\theoremstyle{definition}
+\newtheorem{ex}[thm]{Ex\fr{e}{a} mple}
+\newtheorem{dfn}[thm]{D\fr{é}{e} finition}
+\newtheorem{nota}[thm]{Notation}
+
+\theoremstyle{remark}
+\newtheorem{rem}[thm]{Remar\fr{que}{k}}
+
+%% Disjonctions de cas
+\newenvironment{disjonction}{\begin{enumerate}[label=\textbf{Cas\fr{e}{}  \arabic*.}]}{\end{enumerate}}
