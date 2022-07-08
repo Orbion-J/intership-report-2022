@@ -1,2 +1,4 @@
 *.pdf
 .latex-out/
+.auctex-auto/
+preambule/.auctex-auto/

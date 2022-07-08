@@ -1,5 +1,6 @@
 \documentclass{amsart}
 \makeatletter\let\@wraptoccontribs\wraptoccontribs\makeatother
+\usepackage[foot]{amsaddr}
 
 \input{./preambule/preambule.tex}
 
@@ -11,7 +12,6 @@
 \contrib[]{Daniel Hillerström}
 \address[Daniel Hillerström]{University of Edinburgh}
 
-\usepackage[foot]{amsaddr}
 
 \title[M1 Intership Report]{M1 Internship Report\\ Effect Typing for Links}
 \date{2 May 2022 -- 22 July 2022}
@@ -22,7 +22,13 @@
 
 
 \begin{abstract}
+  This paper is the report of my internship at the School of Informatics of the University of Edinburgh with Sam Lindley and Daniel Hillerström from 2 May 2022 to 22 July 2022.
 
+  Effect handlers are a language feature that is becoming more and more widespread. They allow the user to define and compose many functionalities from exceptions to concurrency and probabilistic programming.
+
+  Links is an experimental tierless functional language for the web, mainly developed in the University of Edinburgh. Among its numerous features, Links supports effect handlers.
+
+  The goal of my intership was to improve the effect typing system of Links, allowing aliases, avoiding pollution and allowing polymorphic operations.
 \end{abstract}
 
 
@@ -31,10 +37,11 @@
 
 \section{Preliminaries}
 
-\subsection{Effect handlers}
-
 
 \subsection{Links}
+
+
+\subsection{Effect handlers}
 
 
 
