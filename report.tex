@@ -1,53 +1,189 @@
-\documentclass{amsart}
-\makeatletter\let\@wraptoccontribs\wraptoccontribs\makeatother
-\usepackage[foot]{amsaddr}
+\documentclass[nonacm=true, language=french, language=english]{acmart}
 
 \input{./preambule/preambule.tex}
+\usepackage{listings}
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    captionpos=b,
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+}
+
+\setcopyright{none}
 
 \author[R. Jourde]{Robin Jourde}
-\address[Robin Jourde]{École Normale Supérieure de Lyon, \mailto{robin.jourde@ens-lyon.fr}}
+\affiliation{%
+  \institution{École Normale Supérieure de Lyon}%
+  \country{France}%
+}
+\email{Robin.Jourde@ens-lyon.fr}
+\author{Supervised by Sam Lindley}
+\email{Sam.Lindley@ed.ac.uk}
+\author{Daniel Hillerström}
+\email{Daniel.Hillerstrom@ed.ac.uk}
+\affiliation{%
+  \institution{The University of Edinburgh}%
+  \country{United Kingdom}%
+}
 
-\contrib[Supervised by]{Sam Lindley}
-\address[Sam Lindley]{University of Edinburgh}
-\contrib[]{Daniel Hillerström}
-\address[Daniel Hillerström]{University of Edinburgh}
+\renewcommand\shortauthors{Robin Jourde}
 
 
-\title[M1 Intership Report]{M1 Internship Report\\ Effect Typing for Links}
+\title[M1 Intership Report]{M1 Internship Report : Effect Typing for Links}
+\subtitle{2 May 2022 -- 22 July 2022, The University of Edinburgh}
+
 \date{2 May 2022 -- 22 July 2022}
 
 \begin{document}
 
-\maketitle
-
 
 \begin{abstract}
   This paper is the report of my internship at the School of Informatics of the University of Edinburgh with Sam Lindley and Daniel Hillerström from 2 May 2022 to 22 July 2022.
-
   Effect handlers are a language feature that is becoming more and more widespread. They allow the user to define and compose many functionalities from exceptions to concurrency and probabilistic programming.
-
   Links is an experimental tierless functional language for the web, mainly developed in the University of Edinburgh. Among its numerous features, Links supports effect handlers.
-
   The goal of my intership was to improve the effect typing system of Links, allowing aliases, avoiding pollution and allowing polymorphic operations.
 \end{abstract}
 
 
+\maketitle
+
 \tableofcontents
 
 
-\section{Preliminaries}
+\section{Introduction}
+
+\section{Links}
+
+\begin{fquote}[Links website (\url{https://links-lang.org/})]
+ Links is a functional programming language designed to make web programming easier.
+\end{fquote}
+
+Links \cite{} is a tierless functional programming language for the web developed at the University of Edinburgh. Typical web development involves the manipulation of several \emph{tiers} which means several, sometimes really different, programming languages :
+\begin{itemize}
+  \item the server side written in Python or Java for instance
+  \item the client side in JavaScript and HTML/CSS
+  \item the database queries in SQL
+\end{itemize}
+This is neither elegant nor really practical and prevents easy binding between different parts of the program that need to communicate data. It can cause \emph{impedance mismatch}, ie situations where the objects required by the server do not match what the database provide and vice versa.
+
+Links avoids these by providing the programmer one single language for each tier (HTML/CSS are still needed) that is compiled into bytecode for the server, JavaScript for the client and SQL for the queries.
+
+Links also supports numerous useful features including
+\begin{itemize}
+  \item polymorphic variants
+  \item regular expressions
+  \item session types
+  \item row typing
+  \item effect handlers (see \ref{sec:handlers})
+\end{itemize}
+It is used as an experimental language by researchers to try out new ideas and what could be future widespread programming languages features.
+
+Links is strict, statically typed and use a Hindley-Milner type system as well as a Rémy style row typing system \ref{sec:row-typ} \cite{}. Its syntax is inspired from JavaScript and ML. Its compiler \cite{} is written in OCaml.
+
+\qrk{In appendix \ref{sec:tech}, the reader could find some technical points on Links syntax and semantics that are not worth it to develop here. He is invited to look at it whenever needed.}
+
+\section{Effect handlers}
+\label{sec:handlers}
+
+In functional programming, functions are seen as black boxes that takes an input and computes an output. Though this view of \emph{pure} functions is convenient and pleases $\lambda$-calculus fans, it fails to accurately represent what real programming is. Computations interact with the outer world by many means :
+\begin{itemize}
+  \item input/output
+  \item concurrency
+  \item exceptions
+  \item choice and non determinism
+  \item ...
+\end{itemize}
+The ``outer world'' here stand for anything that is not the pure computation, from memory, other threads and user interaction to the evaluation context itself.
+These interactions not taken into account by the black-box model are called \emph{effects}.
+
+Gordon Plotkin and Matija Pretnar \cite{} introduced a construct that allow \emph{composable} and \emph{customisable} user-defined interpretation of effects : \emph{effect handlers}. They give the programmer direct access to the context, in the form of a first class continuation, often called \emph{resumption}.
+
+Effect handlers can be seen as a generalisation of exception handlers. One can perform an effect in the same way as one could raise an exception and this will transfer the flow control to a handler. It is given the delimited continuation between the point where the effect is performed and where it is handled and can use it
+\begin{description}
+  \item[0 times] and act as an exception handler
+  \item[once] (linear handler)
+  \item[twice or more] (non-linear handler) to simulate a choice for instance
+\end{description}
 
 
-\subsection{Links}
+\subsection{Syntax and usage}
+
+We give the Links syntax alongside with usage of effect handlers and operations. All examples in this report are written in Links.
+
+Inside any segment of code, one can invoke an operation \verb'Op' with payload \verb'p' writing \verb'do Op(p)'. This has to be scoped into a handler of this operation. It will take the payload and the resumption and decide what to do.
+
+\begin{lstlisting}[caption=Handler,label=lst:handler]
+  handle ( code ) {
+    case <Op(p) => r> -> ...
+    case x -> ...
+  }
+\end{lstlisting}
+
+Listing \ref{lst:handler} give the syntax for a handler for \verb'Op', \verb'code' being the code that can perform the operation. When the operation is invoked, the right hand side of line 2 is executed with \verb'p' the payload and \verb'r' the resumption bound in context. When \verb'code' returns a value, line 3 is executed with \verb'x' bound to that value.
+
+If the handler gives the resumption a value \verb'v', it acts as if \verb'do Op(p)' returned the value \verb'v'. If the payload has type \verb't' and \verb|v| has type \verb|t'|, we say that \verb|Op| has type \verb|t => t'|.
+
+The type system keeps track of what effects can be performed. A function from type \verb|a| to \verb|b| which can performs operations \verb|Op1: t1 => t1'|, \dots, \verb|Opk:tk => tk'| will have type \verb+(a) {Op1:t1 => t1', ..., Opk:tk => tk'}-> b+.
 
 
-\subsection{Effect handlers}
+\subsection{Examples}
 
+\subsubsection{A first exception handler}
+\label{sec:first-except-handl}
 
+~
+
+\begin{lstlisting}[caption=Fail invocation]
+  sig assert_positive : (Int) {Fail:() => Zero|_}-> Int
+  fun assert_positive(x) {
+    if (x>0) x else absurd(do Fail)
+  }
+\end{lstlisting}
+
+This first example shows a function \verb|assert_positive| that takes an integer and returns it only if it positive, else, it raises the effect \verb|Fail| (for details on \verb|absurd| and the \verb|Zero| type, see \ref{sec:tech:zero}). This is the simplest example when one operation is invoked with no payload.
+
+\begin{lstlisting}[caption=maybe handler, label=lst:mb-h]
+  sig maybe : (() {Fail:() => Zero|e}~> a) {Fail{_}|e}~> Maybe(a)
+  fun maybe(m) {
+    handle(m()) {
+      case <Fail> -> Nothing
+      case x -> Just(x)
+    }
+  }
+\end{lstlisting}
+
+This operation can be handled by handler \ref{lst:mb-h}. This is actually an exception handler since the resumption is not used in the right hand side (and thus can be omitted in the left hand side). The \emph{effect signature} is \verb|{Fail: () => Zero}|, that means there is only one operation called \verb|Fail| that will be handled.
+
+When the operation \verb|Fail| is invoked, the handler directly returns a value, here \verb|Nothing|. When the computation returns a value, the handler will return that value, embedded in the \verb|Maybe| type (on \verb|Maybe| type, see \ref{sec:tech:maybe}).
+
+The function \verb|maybe| will take a computation that can perform the effect \verb+{Fail: () => Zero|e}+ ie the operation \verb|Fail| and possibly other effects, captured by the row variable \verb|e|, and returns something of type \verb|a|. It will execute this computation, performing effects from \verb|e| that should be handled by another handler at some point. In the end, it returns a value of type \verb|Maybe(a)|.
+
+The \verb|Fail{_}| in the effect row indicates a polymorphic presence for the operation. Roughly it means that the operation can or cannot be present after. This is needed since the effect type system enforces that all operations in a row are distinct. \verb|Fail| cannot belong to \verb|e| because of the effect row of the input computation.
+
+\begin{lstlisting}
+  sig h2g2 : () {Fail:() => Zero}~> Int
+  fun h2g2 () {
+    assert_positive( -6 * -7 )
+  }
+  sig h2g2' : () {Fail:() => Zero}~> Int
+  fun h2g2' () {
+    assert_positive( -6 ) * -7
+  }
+\end{lstlisting}
+
+We can then use the \verb|maybe| function to handle the failures in functions \verb|h2g2| and \verb|h2g2'| :
+
+\begin{lstlisting}[caption=Links console]
+  links> maybe ( h2g2 ) ;
+  Just(42) : Maybe (Int)
+  links> maybe ( h2g2' ) ;
+  Nothing : Maybe (Int)
+\end{lstlisting}
 
 \section{Typing}
 
 \subsection{Row Typing}
+\label{sec:row-typ}
 
 
 \subsection{Bidirectional Typing}
@@ -65,10 +201,42 @@
 
 
 
-\appendix
-
-
 \bibliographystyle{alpha}
 \bibliography{biblio.bib}
+
+
+\appendix
+
+\section{Links technicalities}
+\label{sec:tech}
+
+Here are some technical points on Links syntax and semantics.
+
+\subsection{Empty type}
+\label{sec:tech:zero}
+The empty type is \verb|Zero|. To destroy it, we use the following \verb|absurd| function.
+\begin{lstlisting}
+  sig absurd : (Zero) -> a
+  fun absurd(x) {
+    switch ( x ) {}
+  }
+\end{lstlisting}
+
+\subsection{Option type}
+\label{sec:tech:maybe}
+Links has a builtin polymorphic option type \verb|Maybe| defined as below. An object of type \verb|Maybe(a)| is either \verb|Nothing| or \verb|Just(x)| where \verb|x| is of type \verb'a'
+\begin{lstlisting}
+  typename Maybe(a) = [| Nothing  | Just : a |]
+\end{lstlisting}
+
+\subsection{Function types}
+Function types are written \verb|(a) {...}-> b|. The domain type is always embraced with parentheses. The braces contains an effect row that tells among others which effects can be performed by the function.
+
+One can write \verb|(a) -e-> b| when \verb|e| is a row variable or an effect type and \verb|(a) -> b| stands for \verb|(a) -_-> b| : the function is then polymorphic in its effects.
+
+\verb|(a) {...}~> b|, \verb|(a) ~e~> b| or \verb|(a) ~> b| is a syntactic sugar that adds the special effect \verb|wild:()| to the row. This is used to denote ``wild'' code, ie code that cannot be transformed into a SQL query. Recursion, IO or handlers are typically wild. \cite{}
+
+For more details on row typing, see section \ref{sec:row-typ}.
+
 
 \end{document}

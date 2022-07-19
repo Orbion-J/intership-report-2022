@@ -1,0 +1,28 @@
+sig absurd : (Zero) -> a
+fun absurd(x) {
+    switch ( x ) {}
+}
+
+# typename Maybe(a) = [| Nothing  | Just : a |]
+
+sig assert_positive : (Int) {Fail:() => Zero|_}-> Int
+fun assert_positive(x) {
+    if (x>0) x else absurd(do Fail)
+}
+
+sig maybe : (() {Fail:() => Zero|e}~> a) {Fail{_}|e}~> Maybe(a)
+fun maybe(m) {
+    handle(m()) {
+      case <Fail> -> Nothing
+      case x -> Just(x)
+    }
+}
+
+sig h2g2 : () {Fail:() => Zero}~> Int
+fun h2g2 () {
+    assert_positive( -6 * -7 )
+}
+sig h2g2' : () {Fail:() => Zero}~> Int
+fun h2g2' () {
+    assert_positive( -6 ) * -7
+}
