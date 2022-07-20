@@ -10,19 +10,61 @@ fun assert_positive(x) {
     if (x>0) x else absurd(do Fail)
 }
 
-sig maybe : (() {Fail:() => Zero|e}~> a) {Fail{_}|e}~> Maybe(a)
-fun maybe(m) {
+sig maybe : (() {Fail:() => Zero|e}~> a) -> () {Fail{_}|e}~> Maybe(a)
+fun maybe(m) () {
     handle(m()) {
       case <Fail> -> Nothing
       case x -> Just(x)
     }
 }
 
-sig h2g2 : () {Fail:() => Zero}~> Int
+sig h2g2 : () {Fail:() => Zero|_}-> Int
 fun h2g2 () {
     assert_positive( -6 * -7 )
 }
-sig h2g2' : () {Fail:() => Zero}~> Int
+sig h2g2' : () {Fail:() => Zero|_}-> Int
 fun h2g2' () {
     assert_positive( -6 ) * -7
+}
+
+## drunk toss
+
+typename Toss = [| Heads | Tail |] ;
+
+sig toss : () {Choose:() => Bool|_}-> Toss
+fun toss () {
+    if (do Choose) Heads else Tail
+}
+
+sig drunkToss : () {Choose:() => Bool, Fail:() => Zero|_}-> Toss
+fun drunkToss () {
+    if (do Choose)
+       toss ()
+    else
+        absurd(do Fail)
+}
+
+sig drunkTosses : (Int) -> () {Choose:() => Bool, Fail:() => Zero|_}~> [Toss]
+fun drunkTosses (n) () {
+    if (n<=0)
+       []
+    else
+        drunkToss() :: drunkTosses (n-1) ()
+}
+
+# linear handler
+sig h_true : (Comp(a,{Choose:Bool|e})) -> Comp(a,{Choose{_}|e})
+fun h_true (m) () {
+    handle (m()) {
+        case <Choose => r> -> r(true)
+    }
+}
+
+# non-linear handler
+sig h_all : (Comp(a,{Choose:Bool|e})) -> Comp([a],{Choose{_}|e})
+fun h_all (m) () {
+    handle (m()) {
+        case <Choose => r> -> r(true) ++ r(false)
+        case x -> [x]
+    }
 }

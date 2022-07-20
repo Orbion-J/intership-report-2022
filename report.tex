@@ -2,12 +2,35 @@
 
 \input{./preambule/preambule.tex}
 \usepackage{listings}
-\lstset{
-    basicstyle=\ttfamily\footnotesize,
-    captionpos=b,
-    numberstyle=\tiny\color{gray},
-    numbers=left,
+
+\usepackage{letltxmacro}
+\newcommand*{\SavedLstInline}{}
+\LetLtxMacro\SavedLstInline\lstinline
+\DeclareRobustCommand*{\lstinline}{%
+  \ifmmode
+    \let\SavedBGroup\bgroup
+    \def\bgroup{%
+      \let\bgroup\SavedBGroup
+      \hbox\bgroup
+    }%
+  \fi
+  \SavedLstInline
 }
+
+\lstdefinelanguage{links}{
+  morekeywords={sig,fun,case,switch,if,else,typename,effectname,do,handle},
+  morecomment=[l]{\#},
+  commentstyle=\color{gray}
+}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  captionpos=b,
+  numberstyle=\tiny\color{gray},
+  numbers=left,
+  breaklines
+}
+\lstset{language=links}
+\lstMakeShortInline^
 
 \setcopyright{none}
 
@@ -110,7 +133,7 @@ Effect handlers can be seen as a generalisation of exception handlers. One can p
 
 We give the Links syntax alongside with usage of effect handlers and operations. All examples in this report are written in Links.
 
-Inside any segment of code, one can invoke an operation \verb'Op' with payload \verb'p' writing \verb'do Op(p)'. This has to be scoped into a handler of this operation. It will take the payload and the resumption and decide what to do.
+Inside any segment of code, one can invoke an operation ^Op^ with payload ^p^ writing ^do Op(p)^. This has to be scoped into a handler of this operation. It will take the payload and the resumption and decide what to do.
 
 \begin{lstlisting}[caption=Handler,label=lst:handler]
   handle ( code ) {
@@ -119,11 +142,11 @@ Inside any segment of code, one can invoke an operation \verb'Op' with payload \
   }
 \end{lstlisting}
 
-Listing \ref{lst:handler} give the syntax for a handler for \verb'Op', \verb'code' being the code that can perform the operation. When the operation is invoked, the right hand side of line 2 is executed with \verb'p' the payload and \verb'r' the resumption bound in context. When \verb'code' returns a value, line 3 is executed with \verb'x' bound to that value.
+Listing \ref{lst:handler} give the syntax for a handler for ^Op^, ^code^ being the code that can perform the operation. When the operation is invoked, the right hand side of line 2 is executed with ^p^ the payload and ^r^ the resumption bound in context. When ^code^ returns a value, line 3 is executed with ^x^ bound to that value.
 
-If the handler gives the resumption a value \verb'v', it acts as if \verb'do Op(p)' returned the value \verb'v'. If the payload has type \verb't' and \verb|v| has type \verb|t'|, we say that \verb|Op| has type \verb|t => t'|.
+If the handler gives the resumption a value ^v^, it acts as if ^do Op(p)^ returned the value ^v^. If the payload has type ^t^ and ^v^ has type ^t'^, we say that ^Op^ has type ^t => t'^.
 
-The type system keeps track of what effects can be performed. A function from type \verb|a| to \verb|b| which can performs operations \verb|Op1: t1 => t1'|, \dots, \verb|Opk:tk => tk'| will have type \verb+(a) {Op1:t1 => t1', ..., Opk:tk => tk'}-> b+.
+The type system keeps track of what effects can be performed. A function from type ^a^ to ^b^ which can performs operations ^Op1: t1 => t1'^, \dots, ^Opk:tk => tk'^ will have type ^(a) {Op1:t1 => t1', ..., Opk:tk => tk'}-> b^.
 
 
 \subsection{Examples}
@@ -140,11 +163,11 @@ The type system keeps track of what effects can be performed. A function from ty
   }
 \end{lstlisting}
 
-This first example shows a function \verb|assert_positive| that takes an integer and returns it only if it positive, else, it raises the effect \verb|Fail| (for details on \verb|absurd| and the \verb|Zero| type, see \ref{sec:tech:zero}). This is the simplest example when one operation is invoked with no payload.
+This first example shows a function ^assert_positive^ that takes an integer and returns it only if it positive, else, it raises the effect ^Fail^ (for details on ^absurd^ and the ^Zero^ type, see \ref{sec:tech:zero}). This is the simplest example when one operation is invoked with no payload.
 
 \begin{lstlisting}[caption=maybe handler, label=lst:mb-h]
-  sig maybe : (() {Fail:() => Zero|e}~> a) {Fail{_}|e}~> Maybe(a)
-  fun maybe(m) {
+  sig maybe : (() {Fail:() => Zero|e}~> a) -> () {Fail{_}|e}~> Maybe(a)
+  fun maybe(m) () {
     handle(m()) {
       case <Fail> -> Nothing
       case x -> Just(x)
@@ -152,39 +175,243 @@ This first example shows a function \verb|assert_positive| that takes an integer
   }
 \end{lstlisting}
 
-This operation can be handled by handler \ref{lst:mb-h}. This is actually an exception handler since the resumption is not used in the right hand side (and thus can be omitted in the left hand side). The \emph{effect signature} is \verb|{Fail: () => Zero}|, that means there is only one operation called \verb|Fail| that will be handled.
+This operation can be handled by handler \ref{lst:mb-h}. This is actually an exception handler since the resumption is not used in the right hand side (and thus can be omitted in the left hand side). The \emph{effect signature} is ^{Fail: () => Zero}^, that means there is only one operation called ^Fail^ that will be handled.
 
-When the operation \verb|Fail| is invoked, the handler directly returns a value, here \verb|Nothing|. When the computation returns a value, the handler will return that value, embedded in the \verb|Maybe| type (on \verb|Maybe| type, see \ref{sec:tech:maybe}).
+When the operation ^Fail^ is invoked, the handler directly returns a value, here ^Nothing^. When the computation returns a value, the handler will return that value, embedded in the ^Maybe^ type (on ^Maybe^ type, see \ref{sec:tech:maybe}).
 
-The function \verb|maybe| will take a computation that can perform the effect \verb+{Fail: () => Zero|e}+ ie the operation \verb|Fail| and possibly other effects, captured by the row variable \verb|e|, and returns something of type \verb|a|. It will execute this computation, performing effects from \verb|e| that should be handled by another handler at some point. In the end, it returns a value of type \verb|Maybe(a)|.
+The function ^maybe^ will take a computation that can perform the effect ^{Fail: () => Zero|e}^ ie the operation ^Fail^ and possibly other effects, captured by the row variable ^e^, and returns something of type ^a^. It will execute this computation, performing effects from ^e^ that should be handled by another handler at some point. In the end, it returns a value of type ^Maybe(a)^.
 
-The \verb|Fail{_}| in the effect row indicates a polymorphic presence for the operation. Roughly it means that the operation can or cannot be present after. This is needed since the effect type system enforces that all operations in a row are distinct. \verb|Fail| cannot belong to \verb|e| because of the effect row of the input computation.
+The ^Fail{_}^ in the effect row indicates a polymorphic presence for the operation. Roughly it means that the operation can or cannot be present after. This is needed since the effect type system enforces that all operations in a row are distinct. ^Fail^ cannot belong to ^e^ because of the effect row of the input computation.
 
 \begin{lstlisting}
-  sig h2g2 : () {Fail:() => Zero}~> Int
+  sig h2g2 : () {Fail:() => Zero|_}-> Int
   fun h2g2 () {
     assert_positive( -6 * -7 )
   }
-  sig h2g2' : () {Fail:() => Zero}~> Int
+  sig h2g2' : () {Fail:() => Zero|_}-> Int
   fun h2g2' () {
     assert_positive( -6 ) * -7
   }
 \end{lstlisting}
 
-We can then use the \verb|maybe| function to handle the failures in functions \verb|h2g2| and \verb|h2g2'| :
+We can then use the ^maybe^ function to handle the failures in functions ^h2g2^ and ^h2g2'^ :
 
 \begin{lstlisting}[caption=Links console]
-  links> maybe ( h2g2 ) ;
+  links> maybe ( h2g2 ) () ;
   Just(42) : Maybe (Int)
-  links> maybe ( h2g2' ) ;
+  links> maybe ( h2g2' ) () ;
   Nothing : Maybe (Int)
 \end{lstlisting}
+
+
+\subsubsection{Drunk coin tossing}
+
+We consider now a new operation ^Choose^ that can produce a boolean and use it to simulate a drunk coin toss. The drunk tosses the coin and either let it fall or catch it and see heads or tail.
+
+\begin{lstlisting}[caption=Drunk toss]
+  typename Toss = [| Heads | Tail |] ;
+
+  sig toss : () {Choose:Bool|_}-> Toss
+  fun toss () {
+    if (do Choose) Heads else Tail
+  }
+
+  sig drunkToss : () {Choose:Bool, Fail:Zero|_}-> Toss
+  fun drunkToss () {
+    if (do Choose)
+      # catch
+      toss ()
+    else
+      # fall
+      absurd(do Fail)
+  }
+
+  sig drunkTosses : (Int) -> Comp([Toss], {Choose:Bool, Fail:Zero|_})
+  fun drunkTosses (n) () {
+    if (n<=0)
+      []
+    else
+      drunkToss() :: drunkTosses (n-1) ()
+  }
+\end{lstlisting}
+
+We can define several handlers for this operation.
+
+\begin{lstlisting}[caption=Toss handlers]
+  # linear handler : always true
+  sig h_true : (Comp(a,{Choose:Bool|e})) -> Comp(a,{Choose{_}|e})
+  fun h_true (m) () {
+    handle (m()) {
+        case <Choose => r> -> r(true)
+    }
+  }
+
+  # non-linear handler : all choices in a list
+  sig h_all : (Comp(a,{Choose:Bool|e})) -> Comp([a],{Choose{_}|e})
+  fun h_all (m) () {
+    handle (m()) {
+        case <Choose => r> -> r(true) ++ r(false)
+        case x -> [x]
+    }
+  }
+\end{lstlisting}
+
+And then we can compose the different handlers in several ways.
+
+\begin{lstlisting}
+  links> maybe ( h_true ( drunkTosses(2) ) ) () ;
+  Just([Heads, Heads]) : Maybe ([Toss])
+  links> h_true ( maybe ( drunkTosses(2) ) ) () ;
+  Just([Heads, Heads]) : Maybe ([Toss])
+
+  links> maybe ( h_all ( drunkTosses(2) ) ) () ;
+  Nothing : Maybe ([[Toss]])
+  links> h_all ( maybe ( drunkTosses(2) ) ) () ;
+  [Just([Heads, Heads]), Just([Heads, Tail]), Nothing, Just([Tail, Heads]), Just([Tail, Tail]), Nothing, Nothing] : [Maybe ([Toss])]
+\end{lstlisting}
+
+We try different combinations for 2 coin tosses. In the two first cases, there is no failure so the order of handlers won't matter. The coin is always catch and always on heads.
+
+In the third case, ^h_all^ imposes that all possibilities are explored so at some point, the coin will fall. This causes a failure, catch by ^maybe^ that simply returns ^Nothing^.
+
+The last case is the most complicated one. The failures are catch by ^maybe^ \emph{under} ^h_all^. That means ^h_all^ won't see failures and will take each result, whether it is a ^Nothing^ or a list of heads/tail and form its big list of all possibilities.
+
+\subsubsection{More examples ??}
+
+
+\subsection{Semantics}
+\label{sec:semantics}
+
+
+
+
+\begin{lstlisting}[mathescape, numbers=none]
+
+handle ( $v$ ) { $H$ } $\longrightarrow N$[$v$/x$]$
+handle ( $\mathcal E[$do Op$_{i}$($v$)$]$ ) { $H$ } $\longrightarrow N_{i}[v$/p, fun (x) { handle $\mathcal E$[x] { $H$ } }/r$]$
+\end{lstlisting}
+
+where
+$H =$ \begin{lstlisting}[mathescape, numbers=none]
+case x -> $N$
+case <Op$_{i}$(p) => r> -> $N_{i}$
+...
+\end{lstlisting}
+
+and
+
+$\mathcal E ::= [] | $ ^handle (^$\mathcal E$^) { ^$H$^ } ^
+
+\begin{align*}
+ \mathcal E ::= [] \mid \lstinline'handle' \\
+  x+1
+\end{align*}
+
+
++ shallow
+
++ param
+
 
 \section{Typing}
 
 \subsection{Row Typing}
 \label{sec:row-typ}
 
+In order to type effects, we store in function types the allowed effects. For that we use rows (that are also used in others features of Links as records and variants).
+
+In the most general setting, a row is defined by
+\[
+  \rho ::= \cdot \mid rv \mid l:\alpha;\rho
+\]
+where $rv$ is a row variable, $l$ is a label and $\alpha$ is a value. $\cdot$ denotes the empty row.
+
+A row is said to be open if it ends with a row variable and closed if it ends with the empty row.
+
+For actual records and variants, the values are actual values of the language but in the typing (typing effects, records and variants) setting, $\alpha$ will be a type.
+
+We require also that in one row, labels are all distinct and we consider row equal up to reordering of pairs labels/value.
+
+\paragraph{Examples}
+$Fail:Zero; Choose:Bool; \cdot$ is a valid row and is equal to $Choose:Bool; Fail:Zero; \cdot$ but $Fail:Zero; Fail:Int; e$ and $Fail:Zero; Fail:Zero; e$ are not valid. In the open row $Choose:Bool; e$, $e$ could not contain anything with label $Choose$.
+
+\paragraph{Links syntax}
+In Links, we write effect rows between braces ^{ ... }^. The empty row is denoted by ^{}^, the closed row $l_{1}:\alpha_{1}; \dots; l_{k}:\alpha_{k}$ is denoted by ^{l1:a1, ..., lk:ak}^ and the open row $l_{1}:\alpha_{1}; \dots; l_{k}:\alpha_{k}; e$ is denoted by ^{l1:a1, ..., lk:ak | e}^.
+
+
+\subsection{Effect Handlers Typing}
+\label{sec:effect-handl-typing}
+
+\begin{align*}
+  \tau ::=\ & P & \text{primitive types} \\
+  \mid & \tau \to_{\rho} \tau & \text{function type} \\
+  \mid & \tau \To \tau & \text{operation type} \\
+  \mid & (\rho) & \text{record type} \\
+  \mid & [\rho] & \text{variant type}
+\end{align*}
+
+\rk{A tuple is a closed record with positive integer labels : $(foo, bar) = (1:foo; 2:bar; \cdot)$. Unit $()$ is the empty record $(\cdot)$. $Zero$ is the empty variant $[\cdot]$.}
+
+
+The typing judgment has to take into account the current ambient effect. We write $\Gamma \vdash e : \tau / \rho$ for expression $e$ has type $\tau$ in context $\Gamma$ and can perform effects in $\rho$.
+
+We give below the main typing rules that allow to understand how effect handlers should be typed. The other rules are the obvious ones and can be found in \ref{}.
+
+\begin{prooftree}
+  \AxiomC{$\Gamma \vdash p : \beta / \rho$}
+  \AxiomC{$\rho' = Op : \beta \To \alpha ; \rho$ or $\rho' = \rho = Op : \beta \To \alpha ; \rho_{0}$}
+  \RightLabel{$Op$}
+  \BinaryInfC{$\Gamma \vdash do\ Op(p) : \alpha / \rho'$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\Gamma \vdash f : \beta \to_{\rho} \alpha / \rho$}
+  \AxiomC{$\Gamma \vdash t : \beta / \rho$}
+  \RightLabel{$App$}
+  \BinaryInfC{$\Gamma \vdash f t : \alpha / \rho$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\Gamma, x:\beta \vdash e : \alpha / \rho$}
+  \RightLabel{$Fun$}
+  \UnaryInfC{$\Gamma \vdash \lambda x. e : \beta \to_{\rho} \alpha / \rho$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\Gamma \vdash m : \beta / \rho'$}
+  \AxiomC{$\Gamma, x:\beta \vdash n : \alpha / \rho$}
+  \AxiomC{$\Gamma, p_{i}:\beta_{i}, r_{i}:\alpha_{i} \to_{\rho} \alpha \vdash n_{i} : \alpha / \rho$}
+  \AxiomC{$\rho' = Op_{i} : \beta_{i} \To \alpha_{i} ; \rho$}
+  \RightLabel{$Handle$}
+  \QuaternaryInfC{$\Gamma \vdash handle (m) \{ case\ x \mapsto n\ case \langle Op_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : \alpha / \rho$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\Gamma \vdash m : \beta / \rho'$}
+  \AxiomC{$\Gamma, x:\beta \vdash n : \alpha / \rho$}
+  \AxiomC{$\Gamma, p_{i}:\beta_{i}, r_{i}:\alpha_{i} \to_{\rho'} \alpha \vdash n_{i} : \alpha / \rho$}
+  \AxiomC{$\rho' = Op_{i} : \beta_{i} \To \alpha_{i} ; \rho$}
+  \RightLabel{$ShallowHandle$}
+  \QuaternaryInfC{$\Gamma \vdash shallowhandle (m) \{ case\ x \mapsto n\ case \langle Op_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : \alpha / \rho$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\Gamma \vdash e : \alpha / \rho$}
+  \AxiomC{$\rho \subset \rho'$}
+  \RightLabel{$WeakEff$}
+  \BinaryInfC{$\Gamma \vdash e : \alpha / \rho'$}
+\end{prooftree}
+
+where $\rho \subseteq \rho'$ means that $\rho$ is open and for all $l:\alpha$ in $\rho$, $l:\alpha$ also appears in $\rho'$.
+
+\begin{thm}
+  If $\Gamma \vdash e : \alpha / \rho$, in the execution of $e$ only effects in $\rho$ are performed and not handled.
+\end{thm}
+\begin{cor}
+  If $\Gamma \vdash e : \alpha / \cdot$, in the execution of $e$ all effects are handled.
+\end{cor}
+
+See \cite{} for the proof.
 
 \subsection{Bidirectional Typing}
 
@@ -192,7 +419,40 @@ We can then use the \verb|maybe| function to handle the failures in functions \v
 
 \section{Contributions}
 
+During my internship I added some new features to Links that have been merged into the 0.0.0 release.
+
 \subsection{Effect Aliases}
+
+In Links we can define type aliases using the keyword ^typename^.
+\begin{lstlisting}[caption=Type alias examples]
+  # sum type via variants
+  typename BinTree(a) = [| Node(BinTree(a), a, BinTree(a)) | Leaf |] ;
+  # product type
+  typename IntPair = (Int, Int) ;
+  # record type
+  typename Pet = (name:String, age:Int, species:String, Fur:Bool) ;
+  # function
+  typename Comp(a, e::Row) = () ~e~> a ;
+\end{lstlisting}
+
+But until now, there was no way to define such thing for effects. This is really usefull since when working with effects, the same set of effects show up everywhere.
+
+Using the new keyword ^effectname^ we can now write an alias for an effect row :
+\begin{lstlisting}
+  effectname MyEffectRow(a, ... ,e::Eff, ...) = { Op1 : type, ... | e } ; # open row
+  effectname MyEffectRow(a, ... ) = { Op1 : type, ... } ; # closed row
+\end{lstlisting}
+
+To use it in a signature or in another type or effect alias just apply it with the right arguments as for typename things. In arrows, it can be used as row variables:
+\begin{lstlisting}
+  () -MyEffectRow(args)-> ()
+\end{lstlisting}
+
+However, due to lack of kind inference, row variables and aliases have to be used carefully so that Links does not think they are of kind type. We need to write them most of the time between braces ^{ | ... }^. For instance, if there is ^effectname E(a::Eff) = {X : ... | a }^ and a row variable ^e::Eff^, you will have to write E({ |e}), and similarly for another effect alias instead of the variable. This makes the usage of several nested aliases a bit messy, it would be nice if it could be avoided.
+
+Recursive effect aliases are not available for now. The aliases are replaced by the row they correspond to, aliases are not kept are not printed out.
+
+The implementation is mostly inspired by what is done for type aliases.
 
 \subsection{Fresh Labels}
 
@@ -210,11 +470,19 @@ We can then use the \verb|maybe| function to handle the failures in functions \v
 \section{Links technicalities}
 \label{sec:tech}
 
-Here are some technical points on Links syntax and semantics.
+Here are some technical points on Links syntax and semantics
+
+\subsection{Comments}
+\label{sec:comments}
+Everything following a ^#^ in a line is a comment.
+
+\subsection{Operation type}
+\label{sec:operation-type}
+An operation should always be of type ^(a) => b^ but one can write ^Op:b^ which will be desugared into ^Op:() => b^.
 
 \subsection{Empty type}
 \label{sec:tech:zero}
-The empty type is \verb|Zero|. To destroy it, we use the following \verb|absurd| function.
+The empty type is ^Zero^. To destroy it, we use the following ^absurd^ function.
 \begin{lstlisting}
   sig absurd : (Zero) -> a
   fun absurd(x) {
@@ -224,19 +492,34 @@ The empty type is \verb|Zero|. To destroy it, we use the following \verb|absurd|
 
 \subsection{Option type}
 \label{sec:tech:maybe}
-Links has a builtin polymorphic option type \verb|Maybe| defined as below. An object of type \verb|Maybe(a)| is either \verb|Nothing| or \verb|Just(x)| where \verb|x| is of type \verb'a'
+Links has a builtin polymorphic option type ^Maybe^ defined as below. An object of type ^Maybe(a)^ is either ^Nothing^ or ^Just(x)^ where ^x^ is of type ^a^
 \begin{lstlisting}
   typename Maybe(a) = [| Nothing  | Just : a |]
 \end{lstlisting}
 
 \subsection{Function types}
-Function types are written \verb|(a) {...}-> b|. The domain type is always embraced with parentheses. The braces contains an effect row that tells among others which effects can be performed by the function.
+Function types are written ^(a) {...}-> b^. The domain type is always embraced with parentheses. The braces contains an effect row that tells among others which effects can be performed by the function.
 
-One can write \verb|(a) -e-> b| when \verb|e| is a row variable or an effect type and \verb|(a) -> b| stands for \verb|(a) -_-> b| : the function is then polymorphic in its effects.
+One can write ^(a) -e-> b^ when ^e^ is a row variable or an effect type and ^(a) -> b^ stands for ^(a) -_-> b^ : the function is then polymorphic in its effects.
 
-\verb|(a) {...}~> b|, \verb|(a) ~e~> b| or \verb|(a) ~> b| is a syntactic sugar that adds the special effect \verb|wild:()| to the row. This is used to denote ``wild'' code, ie code that cannot be transformed into a SQL query. Recursion, IO or handlers are typically wild. \cite{}
+^(a) {...}~> b^, ^(a) ~e~> b^ or ^(a) ~> b^ is a syntactic sugar that adds the special effect ^wild:()^ to the row. This is used to denote ``wild'' code, ie code that cannot be transformed into a SQL query. Recursion, IO or handlers are typically wild. \cite{}
 
 For more details on row typing, see section \ref{sec:row-typ}.
+
+\subsection{Computation and handlers}
+\label{sec:computation-handlers}
+Links has a builtin type for computations
+\begin{lstlisting}
+  typename Comp(a, e::Row) = () ~e~> a
+\end{lstlisting}
+
+For better handler composability, we write handlers that take a computation and output another computation. Then we can compose them easily and we just need to launch the computation at the end :
+\begin{lstlisting}
+  # computation
+  handler''( handler'( handler( f ) ) )
+  # value
+  handler''( handler'( handler( f ) ) ) ()
+\end{lstlisting}
 
 
 \end{document}
