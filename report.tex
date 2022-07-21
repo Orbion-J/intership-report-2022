@@ -1,4 +1,4 @@
-\documentclass[nonacm=true, language=french, language=english]{acmart}
+\documentclass[11pt, nonacm=true, language=french, language=english]{acmart}
 
 \input{./preambule/preambule.tex}
 \usepackage{listings}
@@ -18,7 +18,7 @@
 }
 
 \lstdefinelanguage{links}{
-  morekeywords={sig,fun,case,switch,if,else,typename,effectname,do,handle},
+  morekeywords={sig,fun,case,switch,if,else,typename,effectname,do,handle,shallowhandle,var,fresh},
   morecomment=[l]{\#},
   commentstyle=\color{gray}
 }
@@ -30,7 +30,7 @@
   breaklines
 }
 \lstset{language=links}
-\lstMakeShortInline^
+\lstMakeShortInline!
 
 \setcopyright{none}
 
@@ -103,7 +103,9 @@ It is used as an experimental language by researchers to try out new ideas and w
 
 Links is strict, statically typed and use a Hindley-Milner type system as well as a Rémy style row typing system \ref{sec:row-typ} \cite{}. Its syntax is inspired from JavaScript and ML. Its compiler \cite{} is written in OCaml.
 
-\qrk{In appendix \ref{sec:tech}, the reader could find some technical points on Links syntax and semantics that are not worth it to develop here. He is invited to look at it whenever needed.}
+\begin{rem}
+  In appendix \ref{sec:tech}, the reader could find some technical points on Links syntax and semantics that are not worth it to develop here. He is invited to look at it whenever needed.
+\end{rem}
 
 \section{Effect handlers}
 \label{sec:handlers}
@@ -128,12 +130,19 @@ Effect handlers can be seen as a generalisation of exception handlers. One can p
   \item[twice or more] (non-linear handler) to simulate a choice for instance
 \end{description}
 
+Effect handlers are being shown a growing industrial interest nowadays. Below are listed some of the biggest projects that uses and implement some kind of effect handlers
+\begin{itemize}
+  \item GitHub code analysis library Semantic (used in more than 25 million repositories)
+  \item Meta JavaScript UI library React (used in mire than 2 million websites)
+  \item Uber Pyro language
+  \item WebAssembly
+\end{itemize}
 
 \subsection{Syntax and usage}
 
 We give the Links syntax alongside with usage of effect handlers and operations. All examples in this report are written in Links.
 
-Inside any segment of code, one can invoke an operation ^Op^ with payload ^p^ writing ^do Op(p)^. This has to be scoped into a handler of this operation. It will take the payload and the resumption and decide what to do.
+Inside any segment of code, one can invoke an operation !Op! with payload !p! writing !do Op(p)!. This has to be scoped into a handler of this operation. It will take the payload and the resumption and decide what to do.
 
 \begin{lstlisting}[caption=Handler,label=lst:handler]
   handle ( code ) {
@@ -142,11 +151,11 @@ Inside any segment of code, one can invoke an operation ^Op^ with payload ^p^ wr
   }
 \end{lstlisting}
 
-Listing \ref{lst:handler} give the syntax for a handler for ^Op^, ^code^ being the code that can perform the operation. When the operation is invoked, the right hand side of line 2 is executed with ^p^ the payload and ^r^ the resumption bound in context. When ^code^ returns a value, line 3 is executed with ^x^ bound to that value.
+Listing \ref{lst:handler} give the syntax for a handler for !Op!, !code! being the code that can perform the operation. When the operation is invoked, the right hand side of line 2 is executed with !p! the payload and !r! the resumption bound in context. When !code! returns a value, line 3 is executed with !x! bound to that value.
 
-If the handler gives the resumption a value ^v^, it acts as if ^do Op(p)^ returned the value ^v^. If the payload has type ^t^ and ^v^ has type ^t'^, we say that ^Op^ has type ^t => t'^.
+If the handler gives the resumption a value !v!, it acts as if !do Op(p)! returned the value !v!. If the payload has type !t! and !v! has type !t'!, we say that !Op! has type !t => t'!.
 
-The type system keeps track of what effects can be performed. A function from type ^a^ to ^b^ which can performs operations ^Op1: t1 => t1'^, \dots, ^Opk:tk => tk'^ will have type ^(a) {Op1:t1 => t1', ..., Opk:tk => tk'}-> b^.
+The type system keeps track of what effects can be performed. A function from type !a! to !b! which can performs operations !Op1: t1 => t1'!, \dots, !Opk:tk => tk'! will have type !(a) {Op1:t1 => t1', ..., Opk:tk => tk'}-> b!.
 
 
 \subsection{Examples}
@@ -163,7 +172,7 @@ The type system keeps track of what effects can be performed. A function from ty
   }
 \end{lstlisting}
 
-This first example shows a function ^assert_positive^ that takes an integer and returns it only if it positive, else, it raises the effect ^Fail^ (for details on ^absurd^ and the ^Zero^ type, see \ref{sec:tech:zero}). This is the simplest example when one operation is invoked with no payload.
+This first example shows a function !assert_positive! that takes an integer and returns it only if it positive, else, it raises the effect !Fail! (for details on !absurd! and the !Zero! type, see \ref{sec:tech:zero}). This is the simplest example when one operation is invoked with no payload.
 
 \begin{lstlisting}[caption=maybe handler, label=lst:mb-h]
   sig maybe : (() {Fail:() => Zero|e}~> a) -> () {Fail{_}|e}~> Maybe(a)
@@ -175,13 +184,13 @@ This first example shows a function ^assert_positive^ that takes an integer and 
   }
 \end{lstlisting}
 
-This operation can be handled by handler \ref{lst:mb-h}. This is actually an exception handler since the resumption is not used in the right hand side (and thus can be omitted in the left hand side). The \emph{effect signature} is ^{Fail: () => Zero}^, that means there is only one operation called ^Fail^ that will be handled.
+This operation can be handled by handler \ref{lst:mb-h}. This is actually an exception handler since the resumption is not used in the right hand side (and thus can be omitted in the left hand side). The \emph{effect signature} is !{Fail: () => Zero}!, that means there is only one operation called !Fail! that will be handled.
 
-When the operation ^Fail^ is invoked, the handler directly returns a value, here ^Nothing^. When the computation returns a value, the handler will return that value, embedded in the ^Maybe^ type (on ^Maybe^ type, see \ref{sec:tech:maybe}).
+When the operation !Fail! is invoked, the handler directly returns a value, here !Nothing!. When the computation returns a value, the handler will return that value, embedded in the !Maybe! type (on !Maybe! type, see \ref{sec:tech:maybe}).
 
-The function ^maybe^ will take a computation that can perform the effect ^{Fail: () => Zero|e}^ ie the operation ^Fail^ and possibly other effects, captured by the row variable ^e^, and returns something of type ^a^. It will execute this computation, performing effects from ^e^ that should be handled by another handler at some point. In the end, it returns a value of type ^Maybe(a)^.
+The function !maybe! will take a computation that can perform the effect !{Fail: () => Zero|e}! ie the operation !Fail! and possibly other effects, captured by the row variable !e!, and returns something of type !a!. It will execute this computation, performing effects from !e! that should be handled by another handler at some point. In the end, it returns a value of type !Maybe(a)!.
 
-The ^Fail{_}^ in the effect row indicates a polymorphic presence for the operation. Roughly it means that the operation can or cannot be present after. This is needed since the effect type system enforces that all operations in a row are distinct. ^Fail^ cannot belong to ^e^ because of the effect row of the input computation.
+The !Fail{_}! in the effect row indicates a polymorphic presence for the operation. Roughly it means that the operation can or cannot be present after. This is needed since the effect type system enforces that all operations in a row are distinct. !Fail! cannot belong to !e! because of the effect row of the input computation.
 
 \begin{lstlisting}
   sig h2g2 : () {Fail:() => Zero|_}-> Int
@@ -194,7 +203,7 @@ The ^Fail{_}^ in the effect row indicates a polymorphic presence for the operati
   }
 \end{lstlisting}
 
-We can then use the ^maybe^ function to handle the failures in functions ^h2g2^ and ^h2g2'^ :
+We can then use the !maybe! function to handle the failures in functions !h2g2! and !h2g2'! :
 
 \begin{lstlisting}[caption=Links console]
   links> maybe ( h2g2 ) () ;
@@ -206,7 +215,7 @@ We can then use the ^maybe^ function to handle the failures in functions ^h2g2^ 
 
 \subsubsection{Drunk coin tossing}
 
-We consider now a new operation ^Choose^ that can produce a boolean and use it to simulate a drunk coin toss. The drunk tosses the coin and either let it fall or catch it and see heads or tail.
+We consider now a new operation !Choose! that can produce a boolean and use it to simulate a drunk coin toss. The drunk tosses the coin and either let it fall or catch it and see heads or tail.
 
 \begin{lstlisting}[caption=Drunk toss]
   typename Toss = [| Heads | Tail |] ;
@@ -272,96 +281,150 @@ And then we can compose the different handlers in several ways.
 
 We try different combinations for 2 coin tosses. In the two first cases, there is no failure so the order of handlers won't matter. The coin is always catch and always on heads.
 
-In the third case, ^h_all^ imposes that all possibilities are explored so at some point, the coin will fall. This causes a failure, catch by ^maybe^ that simply returns ^Nothing^.
+In the third case, !h_all! imposes that all possibilities are explored so at some point, the coin will fall. This causes a failure, catch by !maybe! that simply returns !Nothing!.
 
-The last case is the most complicated one. The failures are catch by ^maybe^ \emph{under} ^h_all^. That means ^h_all^ won't see failures and will take each result, whether it is a ^Nothing^ or a list of heads/tail and form its big list of all possibilities.
-
-\subsubsection{More examples ??}
+The last case is the most complicated one. The failures are catch by !maybe! \emph{under} !h_all!. That means !h_all! won't see failures and will take each result, whether it is a !Nothing! or a list of heads/tail and form its big list of all possibilities.
 
 
 \subsection{Semantics}
 \label{sec:semantics}
 
+We give the operational semantics for handlers.
+\[
+  \begin{array}{rcll}
+    !handle ( !v! ) { !H! }! & \longrightarrow & N[v/!x!] \\
+    !handle ( !\mathcal E[!do !Op_{i}!( !v! )!]! ) { !H! }! & \longrightarrow & N_{i}[v/!p!, !fun (x)  { handle ( !\mathcal E[!x!] ! ) { !H! } }!/!r!] & Op_{i} \notin \mathcal E\\
+  \end{array}
+\]
 
+where $H =
+\left\{\begin{array}{l}
+  !case x! \mapsto N \\
+  !case ! \langle Op_{i}(!p!) \To !r!\rangle \mapsto N_{i} \\
+  \dots \\
+\end{array}\right.$
 
+and $\mathcal E$ is an evaluation context : $\mathcal E ::= [] \mid !handle ( !\mathcal E! ) { !H! } ! \mid !var x = ! \mathcal E ! ; ! N$.
 
-\begin{lstlisting}[mathescape, numbers=none]
+$Op \in \mathcal E$ means there is a handler for $Op$ in $\mathcal E$.
 
-handle ( $v$ ) { $H$ } $\longrightarrow N$[$v$/x$]$
-handle ( $\mathcal E[$do Op$_{i}$($v$)$]$ ) { $H$ } $\longrightarrow N_{i}[v$/p, fun (x) { handle $\mathcal E$[x] { $H$ } }/r$]$
+If there is a value $v$ inside the handler, we call the return case $N$ with !x! bound to $v$. When the handler is the most inner one that can handle the operation $Op_{i}$ invoke with some payload $v$, what is insured by $Op_{i}\notin \mathcal E$, we bind the payload and build the resumption before calling the case $N_{i}$.
+
+The resumption is embedded in the current handler since operation $Op_{i}$ could be invoked in the rest of the evaluation context $\mathcal E$. This is called a \emph{deep} handler.
+
+\paragraph{Shallow handlers}
+Links also support \emph{shallow} handlers, ie handlers that do not automatically reuse the handler in the resumption. The programmer has to write it and can choose another handler if needed. Below is the new rule for shallow handler.
+\[
+  \begin{array}{rcll}
+    !shallowhandle ( !\mathcal E[!do !Op_{i}!( !v! )!]! ) { !H! }! & \longrightarrow & N_{i}[v/!p!, !fun (x)  { ! E[!x!] ! }!/!r!] & Op_{i} \notin \mathcal E\\
+  \end{array}
+\]
+
+\paragraph{Parameterised handlers}
+
+Another useful feature of handlers is that they could be parameterised. The programmer can give the handler a parameter that is carried along the computation.
+
+\begin{lstlisting}[caption=Example of parameterised handler]
+  sig h_state : (a) -> (Comp(b,{ Get:()=>a, Put:(a)=>() | e })) ~> Comp((b,a), { Get{_}, Put{_} | e })
+  fun h_state (init) (m) () {
+    handle (m()) (s <- init) {
+      case x -> (x, s)
+      case <Get => r> -> r (s, s)
+      case <Put(s') => r> -> r ((), s')
+    }
+  }
 \end{lstlisting}
 
-where
-$H =$ \begin{lstlisting}[mathescape, numbers=none]
-case x -> $N$
-case <Op$_{i}$(p) => r> -> $N_{i}$
-...
+\begin{lstlisting}
+  fun ex () {
+    var x = do Get * 10 ;
+    var x = 2*x + do Get ;
+    do Put(x) ;
+    ()
+  }
+
+  links> h_state (2) (ex) () ;
+  ((), 42) : ((), Int)
 \end{lstlisting}
 
-and
+A second parameter is given to the !handle! construct that binds a variable and the resumption will take an additional parameter.
 
-$\mathcal E ::= [] | $ ^handle (^$\mathcal E$^) { ^$H$^ } ^
+In the example above, we use that feature to write a state-cell handler. There are two operations !Put! and !Get! that respectively write into the cell and read what is inside. The parameter here is just the content of the cell.
 
-\begin{align*}
- \mathcal E ::= [] \mid \lstinline'handle' \\
-  x+1
-\end{align*}
+Here are the reduction rules for parameterised handlers
+\[
+  \begin{array}{rcll}
+    !handle ( !v! ) ( s!\from w! ) { !H! }! & \longrightarrow & N[v/!x!, w/!s!] \\
+    !handle ( !\mathcal E[!do !Op_{i}!( !v! )!]! ) ( s!\from w! ) { !H! }! & \longrightarrow & N_{i}[v/!p!, w/!s!, !fun (x, s')  { handle ( !\mathcal E[!x!] ! ) ( s!\from!s' ) { !H! } }!/!r!] \\
+    &&Op_{i} \notin \mathcal E\\
+  \end{array}
+\]
 
+\begin{rem}
+  A parameterised has to be deep since the parameter needs a handler to carry it.
+\end{rem}
 
-+ shallow
+\paragraph{Relationships between handlers}
 
-+ param
+Those three kinds of handlers are equivalent in the sense that it is possible to express each of them using one other.
 
+If it is easy to see how to express a deep handler from a parameterised handler or from a shallow handler, the converse is not so obvious. See \cite{}.
 
 \section{Typing}
+
+Links is a strongly statically typed language. In this section, we describe some main features of Links type system that allow us to type effect handlers.
 
 \subsection{Row Typing}
 \label{sec:row-typ}
 
-In order to type effects, we store in function types the allowed effects. For that we use rows (that are also used in others features of Links as records and variants).
+In order to type effects, we store in function types the effects that are \emph{allowed} to be perform during the execution of that function. To do so we use rows. They are an unordered and labeled data and type structure. They are also used in others features of Links as records and variants.
 
 In the most general setting, a row is defined by
 \[
   \rho ::= \cdot \mid rv \mid l:\alpha;\rho
 \]
-where $rv$ is a row variable, $l$ is a label and $\alpha$ is a value. $\cdot$ denotes the empty row.
+where $rv$ is a row variable, $l$ is a label and $\alpha$ is a data. $\cdot$ denotes the empty row.
 
-A row is said to be open if it ends with a row variable and closed if it ends with the empty row.
+A row is said to be \emph{open} if it ends with a row variable and \emph{closed} if it ends with the empty row.
 
-For actual records and variants, the values are actual values of the language but in the typing (typing effects, records and variants) setting, $\alpha$ will be a type.
+For actual records, the data are actual values of the language but in the typing setting (typing effects, records and variants), $\alpha$ will be a type.
 
-We require also that in one row, labels are all distinct and we consider row equal up to reordering of pairs labels/value.
+We require also that in one row, labels are all distinct and we consider row equal up to reordering of pairs labels/data.
 
-\paragraph{Examples}
-$Fail:Zero; Choose:Bool; \cdot$ is a valid row and is equal to $Choose:Bool; Fail:Zero; \cdot$ but $Fail:Zero; Fail:Int; e$ and $Fail:Zero; Fail:Zero; e$ are not valid. In the open row $Choose:Bool; e$, $e$ could not contain anything with label $Choose$.
+\begin{ex}
+  $Fail:Zero; Choose:Bool; \cdot$ is a valid row and is equal to $Choose:Bool; Fail:Zero; \cdot$ but $Fail:Zero; Fail:Int; e$ and $Fail:Zero; Fail:Zero; e$ are not valid. In the open row $Choose:Bool; e$, $e$ could not be substituted by anything with label $Choose$.
+\end{ex}
 
 \paragraph{Links syntax}
-In Links, we write effect rows between braces ^{ ... }^. The empty row is denoted by ^{}^, the closed row $l_{1}:\alpha_{1}; \dots; l_{k}:\alpha_{k}$ is denoted by ^{l1:a1, ..., lk:ak}^ and the open row $l_{1}:\alpha_{1}; \dots; l_{k}:\alpha_{k}; e$ is denoted by ^{l1:a1, ..., lk:ak | e}^.
+In Links, we write effect rows between braces !{ ... }!. The empty row is denoted by !{}!, the closed row $l_{1}:\alpha_{1}; \dots; l_{k}:\alpha_{k}$ is denoted by !{l1:a1, ..., lk:ak}! and the open row $l_{1}:\alpha_{1}; \dots; l_{k}:\alpha_{k}; e$ is denoted by !{l1:a1, ..., lk:ak | e}!.
 
 
-\subsection{Effect Handlers Typing}
-\label{sec:effect-handl-typing}
+\subsection{Links Type System}
+\label{sec:links-typ}
 
+We describe in this section Links type system. In order to avoid useless complexity, we focus on the parts of the type system that are useful to understand effect typing. We omit easy and common parts as well as part used only for other Links features.
 \begin{align*}
   \tau ::=\ & P & \text{primitive types} \\
-  \mid & \tau \to_{\rho} \tau & \text{function type} \\
-  \mid & \tau \To \tau & \text{operation type} \\
-  \mid & (\rho) & \text{record type} \\
-  \mid & [\rho] & \text{variant type}
+  \mid\ & \tau \to_{\rho} \tau & \text{function type} \\
+  \mid\ & \tau \To \tau & \text{operation type} \\
+  \mid\ & (\rho) & \text{record type} \\
+  \mid\ & [\rho] & \text{variant type}
 \end{align*}
 
-\rk{A tuple is a closed record with positive integer labels : $(foo, bar) = (1:foo; 2:bar; \cdot)$. Unit $()$ is the empty record $(\cdot)$. $Zero$ is the empty variant $[\cdot]$.}
+\begin{rem}
+  A tuple is a closed record with positive integer labels : $(foo, bar) = (1:foo; 2:bar; \cdot)$. Unit $()$ is the empty record $(\cdot)$. $Zero$ is the empty variant $[\cdot]$.
+\end{rem}
 
 
-The typing judgment has to take into account the current ambient effect. We write $\Gamma \vdash e : \tau / \rho$ for expression $e$ has type $\tau$ in context $\Gamma$ and can perform effects in $\rho$.
+The typing judgment has to take into account the current allowed effects. We gather them into a row $\rho$ and we write $\Gamma \vdash e : \tau / \rho$ for expression $e$ has type $\tau$ in context $\Gamma$ and can perform effects in $\rho$.
 
-We give below the main typing rules that allow to understand how effect handlers should be typed. The other rules are the obvious ones and can be found in \ref{}.
+We give below the main typing rules that allow to understand how effect handlers should be typed. The other rules are the obvious ones and can be found in appendix \ref{sec:typing-rules}. For the sake of clarity, shallow and parameterised handlers rules have also been moved to the appendix.
 
 \begin{prooftree}
   \AxiomC{$\Gamma \vdash p : \beta / \rho$}
-  \AxiomC{$\rho' = Op : \beta \To \alpha ; \rho$ or $\rho' = \rho = Op : \beta \To \alpha ; \rho_{0}$}
+  \AxiomC{$\rho = Op : \beta \To \alpha ; \rho'$}
   \RightLabel{$Op$}
-  \BinaryInfC{$\Gamma \vdash do\ Op(p) : \alpha / \rho'$}
+  \BinaryInfC{$\Gamma \vdash do\ Op(p) : \alpha / \rho$}
 \end{prooftree}
 
 \begin{prooftree}
@@ -374,7 +437,7 @@ We give below the main typing rules that allow to understand how effect handlers
 \begin{prooftree}
   \AxiomC{$\Gamma, x:\beta \vdash e : \alpha / \rho$}
   \RightLabel{$Fun$}
-  \UnaryInfC{$\Gamma \vdash \lambda x. e : \beta \to_{\rho} \alpha / \rho$}
+  \UnaryInfC{$\Gamma \vdash fun (x) \{ e \} : \beta \to_{\rho} \alpha / \rho$}
 \end{prooftree}
 
 \begin{prooftree}
@@ -386,14 +449,6 @@ We give below the main typing rules that allow to understand how effect handlers
   \QuaternaryInfC{$\Gamma \vdash handle (m) \{ case\ x \mapsto n\ case \langle Op_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : \alpha / \rho$}
 \end{prooftree}
 
-\begin{prooftree}
-  \AxiomC{$\Gamma \vdash m : \beta / \rho'$}
-  \AxiomC{$\Gamma, x:\beta \vdash n : \alpha / \rho$}
-  \AxiomC{$\Gamma, p_{i}:\beta_{i}, r_{i}:\alpha_{i} \to_{\rho'} \alpha \vdash n_{i} : \alpha / \rho$}
-  \AxiomC{$\rho' = Op_{i} : \beta_{i} \To \alpha_{i} ; \rho$}
-  \RightLabel{$ShallowHandle$}
-  \QuaternaryInfC{$\Gamma \vdash shallowhandle (m) \{ case\ x \mapsto n\ case \langle Op_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : \alpha / \rho$}
-\end{prooftree}
 
 \begin{prooftree}
   \AxiomC{$\Gamma \vdash e : \alpha / \rho$}
@@ -402,19 +457,27 @@ We give below the main typing rules that allow to understand how effect handlers
   \BinaryInfC{$\Gamma \vdash e : \alpha / \rho'$}
 \end{prooftree}
 
-where $\rho \subseteq \rho'$ means that $\rho$ is open and for all $l:\alpha$ in $\rho$, $l:\alpha$ also appears in $\rho'$.
+where $\rho \subset \rho'$ means that $\rho$ is open and for all $l:\alpha$ in $\rho$, $l:\alpha$ also appears in $\rho'$.
+
+
+Rule $Op$ states that invoking an operation requires a ambient effect row that contains it with the correct types. Rule $App$ ensure that, when applying a function, its effect row is compatible with the ambient one. The $Handle$ rule types a !handle! construct. The important thing to notice is that the row used to type $m$ obviously contains the operations $Op_{i}$ handled and that after handling, all $Op_{i}$s have been removed from the row. The last rule mentioned here ensures that the ambient effect row mentions effects that are \emph{allowed} to be performed but not necessary since an effect can be added to the row.
+
+We say that an expression $e$ type-checks only if no unhandled effects are allowed : $\Gamma \vdash e : \alpha / \cdot$, noted $\Gamma \vdash e : \alpha$.
+
 
 \begin{thm}
   If $\Gamma \vdash e : \alpha / \rho$, in the execution of $e$ only effects in $\rho$ are performed and not handled.
 \end{thm}
 \begin{cor}
-  If $\Gamma \vdash e : \alpha / \cdot$, in the execution of $e$ all effects are handled.
+  If $\Gamma \vdash e : \alpha$, in the execution of $e$ all effects are handled.
 \end{cor}
 
 See \cite{} for the proof.
 
+
 \subsection{Bidirectional Typing}
 
+\subsection{Polymorphism}
 
 
 \section{Contributions}
@@ -423,7 +486,7 @@ During my internship I added some new features to Links that have been merged in
 
 \subsection{Effect Aliases}
 
-In Links we can define type aliases using the keyword ^typename^.
+In Links we can define type aliases using the keyword !typename!.
 \begin{lstlisting}[caption=Type alias examples]
   # sum type via variants
   typename BinTree(a) = [| Node(BinTree(a), a, BinTree(a)) | Leaf |] ;
@@ -437,7 +500,7 @@ In Links we can define type aliases using the keyword ^typename^.
 
 But until now, there was no way to define such thing for effects. This is really usefull since when working with effects, the same set of effects show up everywhere.
 
-Using the new keyword ^effectname^ we can now write an alias for an effect row :
+Using the new keyword !effectname! we can now write an alias for an effect row :
 \begin{lstlisting}
   effectname MyEffectRow(a, ... ,e::Eff, ...) = { Op1 : type, ... | e } ; # open row
   effectname MyEffectRow(a, ... ) = { Op1 : type, ... } ; # closed row
@@ -448,21 +511,148 @@ To use it in a signature or in another type or effect alias just apply it with t
   () -MyEffectRow(args)-> ()
 \end{lstlisting}
 
-However, due to lack of kind inference, row variables and aliases have to be used carefully so that Links does not think they are of kind type. We need to write them most of the time between braces ^{ | ... }^. For instance, if there is ^effectname E(a::Eff) = {X : ... | a }^ and a row variable ^e::Eff^, you will have to write E({ |e}), and similarly for another effect alias instead of the variable. This makes the usage of several nested aliases a bit messy, it would be nice if it could be avoided.
+However, due to lack of kind inference, row variables and aliases have to be used carefully so that Links does not think they are of kind type. We need to write them most of the time between braces !{ | ... }!. For instance, if there is !effectname E(a::Eff) = {X : ... | a }! and a row variable !e::Eff!, you will have to write !E({ |e})!, and similarly for another effect alias instead of the variable. This makes the usage of several nested aliases a bit messy, it would be nice if it could be avoided.
 
 Recursive effect aliases are not available for now. The aliases are replaced by the row they correspond to, aliases are not kept are not printed out.
 
 The implementation is mostly inspired by what is done for type aliases.
 
 \subsection{Fresh Labels}
+\label{sec:fresh-labels}
+
+\subsubsection{The pollution problem}
+\label{sec:pollution-problem}
+
+We first introduce a problem that arises when playing with numerous effects and that we will be calling \emph{effect pollution}. Let us start with an example.
+
+\begin{lstlisting}
+  sig safe_sqrt : ( Comp(a, {Fail:Zero, Sqrt:(Float)=>Float| e}) ) -> Comp(a , {Fail:Zero, Sqrt{_} | e})
+  fun safe_sqrt (m) () {
+    handle (m())  {
+        case <Sqrt(x) => r> -> r (if (x<0.0) absurd(do Fail) else sqrt(x))
+        case x -> x
+    }
+  }
+
+  sig maybe_sqrt : ( Comp(a, {Fail:Zero, Sqrt:(Float)=>Float| e}) ) -> Comp(Maybe(a) , {Fail{_}, Sqrt{_} | e})
+  fun maybe_sqrt (m) {
+    maybe ( safe_sqrt( m ) )
+  }
+\end{lstlisting}
+
+Let !safe_sqrt! be a handler for the operation !Sqrt! that takes a float and computes its square root. If the number is negative, the handler raises a failure via the !Fail! operation. Let !maybe_sqrt! the composition of the !maybe! handler for failures seen previously and the !safe_sqrt! handler.
+\begin{lstlisting}
+  fun shrink (x) {
+    var y = do Sqrt(x) ;
+    if (y < x)
+      y
+    else
+      absurd(do Fail)
+  }
+
+  fun end (m) () {
+    handle (m()) {
+      case x -> [x]
+      case <Fail> -> []
+    }
+  }
+
+  fun f () {
+    end ( maybe_sqrt ( fun () { shrink(1.2) +. shrink(0.3) } ) ) ()
+  }
+
+  links> f () ;
+  [Nothing] : [Maybe(Float)]
+\end{lstlisting}
+
+Let us image that another piece of code describe above uses this !Sqrt! feature to compute its square roots. The function !shrink! takes the square root and then checks whether the number has shrunk. If it is not the case, it raises an exception catch by the handler !end!. What could happen there is that the !Fail! exception used for !Sqrt! can collided with the !Fail! exception used by this piece of code. That is what happen in function !f! : this should have given a empty list since all square roots are correct and one value is not shrunk but the !Fail! from the !shrink! is catch by !maybe_sqrt! that returns !Nothing!.
+
+That kind of effect pollution could become really annoying when one works with a large amount of code and it reduces modularity.
+
+\subsubsection{State of the art}
+\label{sec:state-art}
+
+  TODO
+
+\subsubsection{A fresh idea ?}
+\label{sec:fresh-idea}
+
+  TODO
+
+\subsubsection{Implementation and usage in Links}
+\label{sec:impl-usage-links}
+
+I added the possibility to define local labels, ie labels that can only be used in a specific scope.
+
+The user can define one or more local labels that will be bound in the scope with
+\begin{lstlisting}
+  fresh `A, `B {
+    [ scope where labels `A and `B are bound ]
+  }
+\end{lstlisting}
+
+He can use the local labels so defined in the scope as any other effect label but he cannot use them outside that scope.
+
+\paragraph{Going out of scope} TODO
+A function, a value or a type alias that has such a label in its type cannot escape the scope. When we leave the scope, we try to erase the label from the type and if it is possible (ie if the label as a polymorphic or absent presence) the function/value is available in the rest of the program, it's type being cleaned from any local label. Otherwise, the function/value/typename is removed from the context and trying to use it will cause an unknown variable or Unbound type constructor error.
+
+\paragraph{Remaining issues}
+There is one issue remaining. The effect aliases being inlined before type-checking, we can get a label going out of scope. This will be identified by the typechecker and will raise a !local label ... is not bound error!. It seems that the effectname has escaped the scope.
+\begin{lstlisting}
+  fresh `A {
+      effectname E = {`A:Int} ;
+  }
+  typename T = () -E-> () ;
+
+  links>
+  Type error: The local label `A<1> is not bound
+  In expression: typename T = () -E-> ().
+\end{lstlisting}
+This is not really satisfying but should be fixed by improving effect aliases and giving them the same behavior as type aliases. Furthermore, this could not cause code that should not type-check to type-check since it is catch.
+
+\paragraph{Implementation}
+Briefly, here is how the code works. All labels in the code can be either global or local, have a name and the local ones have a unique id. Labels with a backtick are parsed into free local label and normal label are parsed into global ones. During desugaring, a newpass binds the local labels. During type-checking, when a !fresh ... { ... }! binding is encountered, we add the labels into the context and typecheck each declaration in the scope. Before that, the context should be clean from any label that will be shadowed by the fresh declaration (labels that have the same name). When leaving the scope, we clean the context from the local labels to avoid them to escape the scope. Moreover we check during typechecking if types do not contain unbound or shadowed labels.
+
+\begin{rem}
+  For now if all labels are internally of the same type and then can be local or global, the parser only accepts local labels in effect related things. If needed, this could be a way of improvement.
+\end{rem}
+
 
 \subsection{Polymorphic Operations}
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 \bibliographystyle{alpha}
 \bibliography{biblio.bib}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 \appendix
@@ -474,15 +664,15 @@ Here are some technical points on Links syntax and semantics
 
 \subsection{Comments}
 \label{sec:comments}
-Everything following a ^#^ in a line is a comment.
+Everything following a !#! in a line is a comment.
 
 \subsection{Operation type}
 \label{sec:operation-type}
-An operation should always be of type ^(a) => b^ but one can write ^Op:b^ which will be desugared into ^Op:() => b^.
+An operation should always be of type !(a) => b! but one can write !Op:b! which will be desugared into !Op:() => b!.
 
 \subsection{Empty type}
 \label{sec:tech:zero}
-The empty type is ^Zero^. To destroy it, we use the following ^absurd^ function.
+The empty type is !Zero!. To destroy it, we use the following !absurd! function.
 \begin{lstlisting}
   sig absurd : (Zero) -> a
   fun absurd(x) {
@@ -492,17 +682,17 @@ The empty type is ^Zero^. To destroy it, we use the following ^absurd^ function.
 
 \subsection{Option type}
 \label{sec:tech:maybe}
-Links has a builtin polymorphic option type ^Maybe^ defined as below. An object of type ^Maybe(a)^ is either ^Nothing^ or ^Just(x)^ where ^x^ is of type ^a^
+Links has a builtin polymorphic option type !Maybe! defined as below. An object of type !Maybe(a)! is either !Nothing! or !Just(x)! where !x! is of type !a!
 \begin{lstlisting}
   typename Maybe(a) = [| Nothing  | Just : a |]
 \end{lstlisting}
 
 \subsection{Function types}
-Function types are written ^(a) {...}-> b^. The domain type is always embraced with parentheses. The braces contains an effect row that tells among others which effects can be performed by the function.
+Function types are written !(a) {...}-> b!. The domain type is always embraced with parentheses. The braces contains an effect row that tells among others which effects can be performed by the function.
 
-One can write ^(a) -e-> b^ when ^e^ is a row variable or an effect type and ^(a) -> b^ stands for ^(a) -_-> b^ : the function is then polymorphic in its effects.
+One can write !(a) -e-> b! when !e! is a row variable or an effect type and !(a) -> b! stands for !(a) -_-> b! : the function is then polymorphic in its effects.
 
-^(a) {...}~> b^, ^(a) ~e~> b^ or ^(a) ~> b^ is a syntactic sugar that adds the special effect ^wild:()^ to the row. This is used to denote ``wild'' code, ie code that cannot be transformed into a SQL query. Recursion, IO or handlers are typically wild. \cite{}
+!(a) {...}~> b!, !(a) ~e~> b! or !(a) ~> b! is a syntactic sugar that adds the special effect !wild:()! to the row. This is used to denote ``wild'' code, ie code that cannot be transformed into a SQL query. Recursion, IO or handlers are typically wild. \cite{}
 
 For more details on row typing, see section \ref{sec:row-typ}.
 
@@ -521,5 +711,31 @@ For better handler composability, we write handlers that take a computation and 
   handler''( handler'( handler( f ) ) ) ()
 \end{lstlisting}
 
+\section{Typing Rules}
+\label{sec:typing-rules}
+
+\begin{prooftree}
+  \AxiomC{$\Gamma \vdash m : \beta / \rho'$}
+  \AxiomC{$\Gamma, x:\beta \vdash n : \alpha / \rho$}
+  \AxiomC{$\rho' = Op_{i} : \beta_{i} \To \alpha_{i} ; \rho$}
+  \noLine
+  \UnaryInfC{$\Gamma, p_{i}:\beta_{i}, r_{i}:\alpha_{i} \to_{\rho'} \alpha \vdash n_{i} : \alpha / \rho$}
+  \RightLabel{$ShallowHandle$}
+  \TrinaryInfC{$\Gamma \vdash shallowhandle (m) \{ case\ x \mapsto n\ case \langle Op_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : \alpha / \rho$}
+\end{prooftree}
+
+\vspace{11pt}
+
+\begin{prooftree}
+  \AxiomC{$\Gamma \vdash m : \beta / \rho'$}
+  \AxiomC{$\Gamma \vdash w : \gamma / \rho'$}
+  \noLine
+  \BinaryInfC{$\Gamma, x:\beta, s:\gamma \vdash n : \alpha / \rho$}
+  \AxiomC{$\rho' = Op_{i} : \beta_{i} \To \alpha_{i} ; \rho$}
+  \noLine
+  \UnaryInfC{$\Gamma, s:\gamma, p_{i}:\beta_{i}, r_{i}:(\alpha_{i},\gamma) \to_{\rho'} \alpha \vdash n_{i} : \alpha / \rho$}
+  \RightLabel{$ParamHandle$}
+  \BinaryInfC{$\Gamma \vdash handle (m) (s \from w) \{ case\ x \mapsto n\ case \langle Op_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : \alpha / \rho$}
+\end{prooftree}
 
 \end{document}

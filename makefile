@@ -56,7 +56,7 @@ clean-config :
 
 
 clean :
-	rm -rf .latex-make-files
+	rm -rf $(dir)
 
 purge : clean
 	rm -rf preambule

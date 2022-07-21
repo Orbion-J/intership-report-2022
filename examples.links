@@ -68,3 +68,90 @@ fun h_all (m) () {
         case x -> [x]
     }
 }
+
+## parameterised handlers
+sig h_state : (a) -> (Comp(b,{ Get:()=>a, Put:(a)=>() |e })) ~> Comp((b,a), {Get{_}, Put{_}|e})
+fun h_state (init) (m) () {
+    handle (m()) (s <- init) {
+        case x -> (x, s)
+        case <Get => r> -> r (s, s)
+        case <Put(s') => r> -> r ((), s')
+    }
+}
+
+fun ex () {
+    var x = do Get * 10 ;
+    var x = 2*x + do Get ;
+    do Put(x) ;
+    ()
+}
+
+## pollution ex
+
+
+typename Maybint = Maybe(Int) ;
+
+sig safe_sqrt : ( Comp(a, {Fail:Zero, Sqrt:(Float)=>Float| e}) ) -> Comp(a , {Fail:Zero, Sqrt{_} | e})
+fun safe_sqrt (m) () {
+    handle (m())  {
+        case <Sqrt(x) => r> -> r (if (x<0.0) absurd(do Fail) else sqrt(x))
+    }
+}
+
+  sig maybe_sqrt : ( Comp(a, {Fail:Zero, Sqrt:(Float)=>Float| e}) ) -> Comp(Maybe(a) , {Fail{_}, Sqrt{_} | e})
+  fun maybe_sqrt (m) {
+    maybe ( safe_sqrt( m ) )
+  }
+
+  fun schrink (x) {
+    var y = do Sqrt(x) ;
+    if (y < x)
+      y
+    else
+      absurd(do Fail)
+  }
+
+  fun end (m) () {
+    handle (m()) {
+      case x -> [x]
+      case <Fail> -> []
+    }
+  }
+
+  fun f () {
+      end ( maybe_sqrt ( fun () { schrink(1.2) +. schrink( -.1.0 ) } ) ) ()
+  }
+
+  fun g () {
+      end ( maybe_sqrt ( fun () { schrink(1.2) +. schrink(0.3) } ) ) ()
+  }
+
+# effectname FR(s,e::Eff) = {| F({| R({| e }) }) } ;
+# effectname NAR(s,e::Eff) = { Fail- | R({| e }) } ;
+
+#     sig withtwo21s : ( () ~NAR(Int,{ |e})~> a ) -> Comp(Maybe(a), {Receive{_}, `Abort{_}|e})
+#     fun withtwo21s (h) () { maybe( receives( h:( () ~AR(Int,{ |e})~> a ) <- ( () ~NAR(Int,{ |e})~> a) ) ([21,21]) ) () }
+
+# }
+
+
+# typename CRI(e::Eff) = Comp(Int, { |R(Int,{ |e})}) ;
+
+# sig f : CRI({ |e}) fun f () { do Receive + do Receive }
+# sig g : CRI({ |e}) fun g () { do Receive + do Receive + do Receive }
+
+# fun h () { if (do Receive < 42) {switch (do Abort) {}} else 0 }
+
+# sig res : ( Comp(Maybint, {Abort:Zero |e}) ) -> Comp(Maybint, {Abort{_}|e})
+# fun res (h) () {
+#     handle(h()) {
+#         case Abort(_)  -> Just(-1)
+#     }
+# }
+
+
+# (
+#     withtwo21s( f ) () ,
+#     withtwo21s( g ) () ,
+#     res(withtwo21s(h)) ()
+# )
