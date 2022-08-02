@@ -20,10 +20,14 @@ $(dir)/$(src).pdf : $(src).tex preambule/*
 	$(compile)
 
 
-.PHONY : twice
-twice :
+.PHONY : t
+t :
+	$(compile)
+	bibtex $(dir)/$(src)
+	cp $(dir)/$(src).blg $(src).blg
 	$(compile)
 	$(compile)
+	rm $(src).blg
 	cp $(dir)/$(src).pdf $(src).pdf
 
 

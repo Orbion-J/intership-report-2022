@@ -1,0 +1,192 @@
+@article{binders-labels,
+author = {Biernacki, Dariusz and Pir\'{o}g, Maciej and Polesiuk, Piotr and Sieczkowski, Filip},
+title = {Binders by Day, Labels by Night: Effect Instances via Lexically Scoped Handlers},
+year = {2019},
+issue_date = {January 2020},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {4},
+number = {POPL},
+url = {https://doi.org/10.1145/3371116},
+doi = {10.1145/3371116},
+abstract = {Handlers of algebraic effects aspire to be a practical and robust programming construct that allows one to define, use, and combine different computational effects. Interestingly, a critical problem that still bars the way to their popular adoption is how to combine different uses of the same effect in a program, particularly in a language with a static type-and-effect system. For example, it is rudimentary to define the “mutable memory cell” effect as a pair of operations, put and get, together with a handler, but it is far from obvious how to use this effect a number of times to operate a number of memory cells in a single context. In this paper, we propose a solution based on lexically scoped effects in which each use (an “instance”) of an effect can be singled out by name, bound by an enclosing handler and tracked in the type of the expression. Such a setting proves to be delicate with respect to the choice of semantics, as it depends on the explosive mixture of effects, polymorphism, and reduction under binders. Hence, we devise a novel approach to Kripke-style logical relations that can deal with open terms, which allows us to prove the desired properties of our calculus. We formalise our core results in Coq, and introduce an experimental surface-level programming language to show that our approach is applicable in practice.},
+journal = {Proc. ACM Program. Lang.},
+month = {dec},
+articleno = {48},
+numpages = {29},
+keywords = {effect handlers, logical relations, algebraic effects}
+}
+
+@article{abstr-alg-eff,
+author = {Biernacki, Dariusz and Pir\'{o}g, Maciej and Polesiuk, Piotr and Sieczkowski, Filip},
+title = {Abstracting Algebraic Effects},
+year = {2019},
+issue_date = {January 2019},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {3},
+number = {POPL},
+url = {https://doi.org/10.1145/3290319},
+doi = {10.1145/3290319},
+abstract = {Proposed originally by Plotkin and Pretnar, algebraic effects and their handlers are a leading-edge approach to computational effects: exceptions, mutable state, nondeterminism, and such. Appreciated for their elegance and expressiveness, they are now progressing into mainstream functional programming languages. In this paper, we introduce and examine programming language constructs that back adoption of programming with algebraic effects on a larger scale in a modular fashion by providing mechanisms for abstraction. We propose two such mechanisms: existential effects (which hide the details of a particular effect from the user) and local effects (which guarantee that no code coming from the outside can interfere with a given effect). The main technical difficulty arises from the dynamic nature of coupling an effectful operation with the right handler during execution, but, as we show in this paper, a carefully designed type system can ensure that this will not break the abstraction. Our main contribution is a novel calculus for algebraic effects and handlers, called λHEL, equipped with local and existential algebraic effects, in which the dynamic nature of handlers is kept in check by typed runtime coercions. As a proof of concept, we present an experimental programming language based on our calculus, which provides strong abstraction mechanisms via an ML-style module system.},
+journal = {Proc. ACM Program. Lang.},
+month = {jan},
+articleno = {6},
+numpages = {28},
+keywords = {existential type, algebraic effect, row polymorphism}
+}
+
+
+@article{doobeedoo,
+title={Doo bee doo bee doo},
+volume={30},
+DOI={10.1017/S0956796820000039},
+journal={Journal of Functional Programming},
+publisher={Cambridge University Press},
+author={Convent, Lukas and Lindley, Sam and McBride, Conor and McLaughlin, Craig},
+year={2020},
+pages={e9}
+}
+
+@article{bidir,
+author = {Dunfield, Jana and Krishnaswami, Neel},
+title = {Bidirectional Typing},
+year = {2021},
+issue_date = {June 2022},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {54},
+number = {5},
+issn = {0360-0300},
+url = {https://doi.org/10.1145/3450952},
+doi = {10.1145/3450952},
+abstract = {Bidirectional typing combines two modes of typing: type checking, which checks that a program satisfies a known type, and type synthesis, which determines a type from the program. Using checking enables bidirectional typing to support features for which inference is undecidable; using synthesis enables bidirectional typing to avoid the large annotation burden of explicitly typed languages. In addition, bidirectional typing improves error locality. We highlight the design principles that underlie bidirectional type systems, survey the development of bidirectional typing from the prehistoric period before Pierce and Turner’s local type inference to the present day, and provide guidance for future investigations.},
+journal = {ACM Comput. Surv.},
+month = {may},
+articleno = {98},
+numpages = {38},
+keywords = {Type checking, type inference}
+}
+
+@InProceedings{links,
+author="Cooper, Ezra
+and Lindley, Sam
+and Wadler, Philip
+and Yallop, Jeremy",
+editor="de Boer, Frank S.
+and Bonsangue, Marcello M.
+and Graf, Susanne
+and de Roever, Willem-Paul",
+title="Links: Web Programming Without Tiers",
+booktitle="Formal Methods for Components and Objects",
+year="2007",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="266--296",
+abstract="Links is a programming language for web applications that generates code for all three tiers of a web application from a single source, compiling into JavaScript to run on the client and into SQL to run on the database. Links supports rich clients running in what has been dubbed `Ajax' style, and supports concurrent processes with statically-typed message passing. Links is scalable in the sense that session state is preserved in the client rather than the server, in contrast to other approaches such as Java Servlets or PLT Scheme. Client-side concurrency in JavaScript and transfer of computation between client and server are both supported by translation into continuation-passing style.",
+isbn="978-3-540-74792-5"
+}
+
+@inproceedings{corelinks,
+author = {Lindley, Sam and Cheney, James},
+title = {Row-Based Effect Types for Database Integration},
+year = {2012},
+isbn = {9781450311205},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/2103786.2103798},
+doi = {10.1145/2103786.2103798},
+abstract = {We present CoreLinks, a call-by-value variant of System F with row polymorphism, row-based effect types, and implicit subkinding, which forms the basis for the Links web programming language. We focus on extensions to CoreLinks for database programming. The effect types support abstraction over database queries, while ensuring that queries are translated predictably to idiomatic and efficient SQL at run-time. Subkinding statically enforces the constraint that queries must return a list of records of base type. Polymorphism over the presence of record labels supports abstraction over database queries, inserts, deletes and updates.},
+booktitle = {Proceedings of the 8th ACM SIGPLAN Workshop on Types in Language Design and Implementation},
+pages = {91–102},
+numpages = {12},
+keywords = {normalisation, effect types, polymorphism, language integrated query, row types},
+location = {Philadelphia, Pennsylvania, USA},
+series = {TLDI '12}
+}
+
+@article{ehgc,
+title={Effect handlers via generalised continuations},
+volume={30}, DOI={10.1017/S0956796820000040},
+journal={Journal of Functional Programming},
+publisher={Cambridge University Press},
+author={Hillerström, Daniel and Lindley, Sam and Atkey, Robert},
+year={2020},
+pages={e5}}
+
+@inproceedings{links-effect,
+author = {Hillerstr\"{o}m, Daniel and Lindley, Sam},
+title = {Liberating Effects with Rows and Handlers},
+year = {2016},
+isbn = {9781450344357},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/2976022.2976033},
+doi = {10.1145/2976022.2976033},
+abstract = {Algebraic effects and effect handlers provide a modular abstraction for effectful programming. They support user-defined effects, as in Haskell, in conjunction with direct-style effectful programming, as in ML. They also present a structured interface to programming with delimited continuations. In order to be modular, it is necessary for an effect type system to support extensible effects. Row polymorphism is a natural abstraction for modelling extensibility at the level of types. In this paper we argue that the abstraction required to implement extensible effects and their handlers is exactly row polymorphism. We use the Links functional web programming language as a platform to substantiate this claim. Links is a natural starting point as it uses row polymorphism for polymorphic variants, records, and its built-in effect types. It also has infrastructure for manipulating continuations. Through a small extension to Links we smoothly add support for effect handlers, making essential use of rows in the frontend and first-class continuations in the backend. We demonstrate the usability of our implementation by modelling the mathematical game of Nim as an abstract computation. We interpret this abstract computation in a variety of ways, illustrating how rows and handlers support modularity and smooth composition of effectful computations. We present a core calculus of row-polymorphic effects and handlers based on a variant of A-normal form used in the intermediate representation of Links. We give an operational semantics for the calculus and a novel generalisation of the CEK machine that implements the operational semantics, and prove that the two coincide.},
+booktitle = {Proceedings of the 1st International Workshop on Type-Driven Development},
+pages = {15–27},
+numpages = {13},
+keywords = {delimited control, abstract machine semantics, operational semantics, effect typing, effect handlers, algebraic effects},
+location = {Nara, Japan},
+series = {TyDe 2016}
+}
+
+@ARTICLE{row-typ,
+author = {Rémy, Didier},
+title = {Type Inference for Records in a Natural Extension of ML},
+journal = {Theoretical Aspects of Object-Oriented Programming: Types, Semantics, and Language Design},
+year = {1994}
+}
+
+@InProceedings{plotkin-pretnar,
+author="Plotkin, Gordon
+and Pretnar, Matija",
+editor="Castagna, Giuseppe",
+title="Handlers of Algebraic Effects",
+booktitle="Programming Languages and Systems",
+year="2009",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="80--94",
+abstract="We present an algebraic treatment of exception handlers and, more generally, introduce handlers for other computational effects representable by an algebraic theory. These include nondeterminism, interactive input/output, concurrency, state, time, and their combinations; in all cases the computation monad is the free-model monad of the theory. Each such handler corresponds to a model of the theory for the effects at hand. The handling construct, which applies a handler to a computation, is based on the one introduced by Benton and Kennedy, and is interpreted using the homomorphism induced by the universal property of the free model. This general construct can be used to describe previously unrelated concepts from both theory and practice.",
+isbn="978-3-642-00590-9"
+}
+
+ @phdthesis{daniel-thesis,
+ title={Foundations for programming and implementing effect handlers},
+ author={Hillerstr\"{o}m, Daniel},
+ year={2022}
+ }
+
+@misc{links-org,
+author={Web},
+title={Links website},
+howpublished = "\url{https://www.links-lang.org}"
+}
+
+@misc{gh:mylinks,
+author={Jourde, Robin},
+title={Links fork},
+howpublished="\url{https://github.com/Orbion-J/links}"
+}
+
+@misc{gh:links,
+author={Web},
+title={Links repository},
+howpublished="\url{https://github.com/links-lang/links}"
+}
+
+@misc{gh:prs,
+author={Jourde, Robin},
+title={Links pull requests},
+howpublished="\url{https://github.com/links-lang/links/issues?q=author\%3AOrbion-J+}"
+}
+
+@unpublished{tes,
+title={A Type System for Effect Handlers and Dynamic Labels},
+author={Em\'{i}lio de Vilhena, Paulo and Pottier, François},
+year={2022},
+howpublished="preprint available at \url{http://cambium.inria.fr/~fpottier/publis/de-vilhena-pottier-tes.pdf}",
+url={http://cambium.inria.fr/~fpottier/publis/de-vilhena-pottier-tes.pdf}
+}

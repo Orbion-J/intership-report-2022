@@ -18,7 +18,7 @@
 }
 
 \lstdefinelanguage{links}{
-  morekeywords={sig,fun,case,switch,if,else,typename,effectname,do,handle,shallowhandle,var,fresh},
+  morekeywords={sig,fun,case,switch,if,else,typename,effectname,do,handle,shallowhandle,lexhandle,var,fresh},
   morecomment=[l]{\#},
   commentstyle=\color{gray}
 }
@@ -72,16 +72,19 @@
 
 \tableofcontents
 
+\newpage
 
 \section{Introduction}
 
+TODO
+
 \section{Links}
 
-\begin{fquote}[Links website (\url{https://links-lang.org/})]
+\begin{fquote}[Links website \cite{links-org}]
  Links is a functional programming language designed to make web programming easier.
 \end{fquote}
 
-Links \cite{} is a tierless functional programming language for the web developed at the University of Edinburgh. Typical web development involves the manipulation of several \emph{tiers} which means several, sometimes really different, programming languages :
+Links \citep{} is a tierless functional programming language for the web developed at the University of Edinburgh. Typical web development involves the manipulation of several \emph{tiers} which means several, sometimes really different, programming languages :
 \begin{itemize}
   \item the server side written in Python or Java for instance
   \item the client side in JavaScript and HTML/CSS
@@ -101,7 +104,7 @@ Links also supports numerous useful features including
 \end{itemize}
 It is used as an experimental language by researchers to try out new ideas and what could be future widespread programming languages features.
 
-Links is strict, statically typed and use a Hindley-Milner type system as well as a Rémy style row typing system \ref{sec:row-typ} \cite{}. Its syntax is inspired from JavaScript and ML. Its compiler \cite{} is written in OCaml.
+Links is strict, statically typed and use a Hindley-Milner type system as well as a Rémy style row typing system \ref{sec:row-typ} \citep{row-typ}. Its syntax is inspired from JavaScript and ML. Its compiler \citep{} is written in OCaml.
 
 \begin{rem}
   In appendix \ref{sec:tech}, the reader could find some technical points on Links syntax and semantics that are not worth it to develop here. He is invited to look at it whenever needed.
@@ -121,7 +124,7 @@ In functional programming, functions are seen as black boxes that takes an input
 The ``outer world'' here stand for anything that is not the pure computation, from memory, other threads and user interaction to the evaluation context itself.
 These interactions not taken into account by the black-box model are called \emph{effects}.
 
-Gordon Plotkin and Matija Pretnar \cite{} introduced a construct that allow \emph{composable} and \emph{customisable} user-defined interpretation of effects : \emph{effect handlers}. They give the programmer direct access to the context, in the form of a first class continuation, often called \emph{resumption}.
+Gordon Plotkin and Matija Pretnar \citep{plotkin-pretnar} introduced a construct that allow \emph{composable} and \emph{customisable} user-defined interpretation of effects : \emph{effect handlers}. They give the programmer direct access to the context, in the form of a first class continuation, often called \emph{resumption}.
 
 Effect handlers can be seen as a generalisation of exception handlers. One can perform an effect in the same way as one could raise an exception and this will transfer the flow control to a handler. It is given the delimited continuation between the point where the effect is performed and where it is handled and can use it
 \begin{description}
@@ -137,6 +140,8 @@ Effect handlers are being shown a growing industrial interest nowadays. Below ar
   \item Uber Pyro language
   \item WebAssembly
 \end{itemize}
+
+TODO : refs ?
 
 \subsection{Syntax and usage}
 
@@ -291,9 +296,10 @@ The last case is the most complicated one. The failures are catch by !maybe! \em
 
 We give the operational semantics for handlers.
 \[
-  \begin{array}{rcll}
+  \begin{array}{rcl}
     !handle ( !v! ) { !H! }! & \longrightarrow & N[v/!x!] \\
-    !handle ( !\mathcal E[!do !Op_{i}!( !v! )!]! ) { !H! }! & \longrightarrow & N_{i}[v/!p!, !fun (x)  { handle ( !\mathcal E[!x!] ! ) { !H! } }!/!r!] & Op_{i} \notin \mathcal E\\
+    !handle ( !\mathcal E[!do !Op_{i}!( !v! )!]! ) { !H! }! & \longrightarrow & N_{i}[v/!p!, !fun (x)  { handle ( !\mathcal E[!x!] ! ) { !H! } }!/!r!] \\
+                                                                             && Op_{i} \notin \mathcal E\\
   \end{array}
 \]
 
@@ -355,8 +361,9 @@ Here are the reduction rules for parameterised handlers
 \[
   \begin{array}{rcll}
     !handle ( !v! ) ( s!\from w! ) { !H! }! & \longrightarrow & N[v/!x!, w/!s!] \\
-    !handle ( !\mathcal E[!do !Op_{i}!( !v! )!]! ) ( s!\from w! ) { !H! }! & \longrightarrow & N_{i}[v/!p!, w/!s!, !fun (x, s')  { handle ( !\mathcal E[!x!] ! ) ( s!\from!s' ) { !H! } }!/!r!] \\
-    &&Op_{i} \notin \mathcal E\\
+    !handle ( !\mathcal E[!do !Op_{i}!( !v! )!]! ) !  & \longrightarrow & N_{i}[v/!p!, w/!s!, \\
+    ! ( s!\from w! ) { !H! }!                        &                 & !fun (x, s')  { handle ( !\mathcal E[!x!] ! ) ( s!\from!s' ) { !H! } }!/!r!] \\
+                                                     &                 & Op_{i} \notin \mathcal E\\
   \end{array}
 \]
 
@@ -368,116 +375,172 @@ Here are the reduction rules for parameterised handlers
 
 Those three kinds of handlers are equivalent in the sense that it is possible to express each of them using one other.
 
-If it is easy to see how to express a deep handler from a parameterised handler or from a shallow handler, the converse is not so obvious. See \cite{}.
+If it is easy to see how to express a deep handler from a parameterised handler or from a shallow handler, the converse is not so obvious. See \citep{ehgc}, section 4 or \citep{daniel-thesis}, section 6.
 
 \section{Typing}
 
 Links is a strongly statically typed language. In this section, we describe some main features of Links type system that allow us to type effect handlers.
 
-\subsection{Row Typing}
+\subsection{Rows}
 \label{sec:row-typ}
 
 In order to type effects, we store in function types the effects that are \emph{allowed} to be perform during the execution of that function. To do so we use rows. They are an unordered and labeled data and type structure. They are also used in others features of Links as records and variants.
 
 In the most general setting, a row is defined by
 \[
-  \rho ::= \cdot \mid rv \mid l:\alpha;\rho
+  R ::= \bullet \mid \rho \mid l:\delta;R
 \]
-where $rv$ is a row variable, $l$ is a label and $\alpha$ is a data. $\cdot$ denotes the empty row.
+where $\rho$ is a row variable, $l$ is a label and $\delta$ is a data. $\bullet$ denotes the empty row.
 
 A row is said to be \emph{open} if it ends with a row variable and \emph{closed} if it ends with the empty row.
 
-For actual records, the data are actual values of the language but in the typing setting (typing effects, records and variants), $\alpha$ will be a type.
+For actual records, the data are actual values of the language but in the typing setting (typing effects, records and variants), $\delta$ will be a presence (see \ref{sec:links-typ}).
 
 We require also that in one row, labels are all distinct and we consider row equal up to reordering of pairs labels/data.
 
 \begin{ex}
-  $Fail:Zero; Choose:Bool; \cdot$ is a valid row and is equal to $Choose:Bool; Fail:Zero; \cdot$ but $Fail:Zero; Fail:Int; e$ and $Fail:Zero; Fail:Zero; e$ are not valid. In the open row $Choose:Bool; e$, $e$ could not be substituted by anything with label $Choose$.
+  $Fail:Zero; Choose:Bool; \bullet$ is a valid row and is equal to $Choose:Bool; Fail:Zero; \bullet$ but $Fail:Zero; Fail:Int; e$ and $Fail:Zero; Fail:Zero; e$ are not valid. In the open row $Choose:Bool; e$, $e$ could not be substituted by anything with label $Choose$.
 \end{ex}
-
-\paragraph{Links syntax}
-In Links, we write effect rows between braces !{ ... }!. The empty row is denoted by !{}!, the closed row $l_{1}:\alpha_{1}; \dots; l_{k}:\alpha_{k}$ is denoted by !{l1:a1, ..., lk:ak}! and the open row $l_{1}:\alpha_{1}; \dots; l_{k}:\alpha_{k}; e$ is denoted by !{l1:a1, ..., lk:ak | e}!.
 
 
 \subsection{Links Type System}
 \label{sec:links-typ}
 
-We describe in this section Links type system. In order to avoid useless complexity, we focus on the parts of the type system that are useful to understand effect typing. We omit easy and common parts as well as part used only for other Links features.
-\begin{align*}
-  \tau ::=\ & P & \text{primitive types} \\
-  \mid\ & \tau \to_{\rho} \tau & \text{function type} \\
-  \mid\ & \tau \To \tau & \text{operation type} \\
-  \mid\ & (\rho) & \text{record type} \\
-  \mid\ & [\rho] & \text{variant type}
-\end{align*}
+We describe in this section and the following Links type system. In order to avoid useless complexity, we focus on the parts of the type system that are useful to understand effect typing. We omit easy and common parts as well as some parts used only for other Links features.
+
+Below is the type and kind syntax.
+
+\[
+  \begin{array}{lrrll}
+    \text{Kinds}           & K & ::= & Type \mid Row \mid Presence & \\
+                           &&\mid & \kappa & \text{kind variable} \\
+
+    \text{Rows}            & R, E & ::= & \bullet & \\
+                           &&\mid & l:P;R & \\
+                           &&\mid & \rho & \text{row variable} \\
+
+    \text{Presence}        & P & ::= & - & \text{absent} \\
+                           &&\mid & T & \text{present with a type} \\
+                           &&\mid & \theta & \text{presence variable} \\
+
+    \text{Types}           & T, A, B & ::=\ & P & \text{primitive type} \\
+                           &&\mid & T \to_{E} T & \text{function type} \\
+                           &&\mid & T \To T & \text{operation type} \\
+                           &&\mid & (R) & \text{record type} \\
+                           &&\mid & [R] & \text{variant type} \\
+                           &&\mid & \forall \alpha :: K. T & \text{polymorphic type} \\
+                           &&\mid & A\ B & \text{type application} \\
+                           &&\mid & \alpha & \text{type variable} \\
+
+    \text{Primitive types} & P & ::= & Int \mid Bool \mid String \mid \dots &
+  \end{array}
+\]
+
+We have three different kinds that are usual \emph{types}, \emph{rows} and \emph{presence types}.
+
+Any label that appears into a row is associated with a presence type that indicates if the label is present in this row. If it is, we have to provide a type, otherwise this is not necessary and we just indicate the absence. One may wonder why are presence useful. After all, to know if a label is present into a row, looking at the row should be enough. This is true for closed rows but not for open ones. Writing $l:-;\rho$ implies that the row variable $\rho$ cannot stands for a row containing $l$ since a label cannot appear twice into a row. Absence guaranties that whatever the row variable is substituted with, this label will never occur.
 
 \begin{rem}
-  A tuple is a closed record with positive integer labels : $(foo, bar) = (1:foo; 2:bar; \cdot)$. Unit $()$ is the empty record $(\cdot)$. $Zero$ is the empty variant $[\cdot]$.
+  In \emph{closed} rows, absence is redundant :
+  $$ l_{0}:- ; l_{1}:P_{1} ; \dots ; l_{k}:P_{k} ; \bullet = l_{1}:P_{1} ; \dots ; l_{k} : P_{k} ; \bullet $$
 \end{rem}
 
+\paragraph{Links syntax for presence and effect rows}
+In Links, we write effect rows between braces !{ ... }!. For a label !A!, the absence is denoted !A-!, the typed presence !A:type! and the polymorphic presence !A{p}!, with !p! a variable of presence kind. The empty row is denoted by !{}!, the closed row $l_{1}:\delta_{1}; \dots; l_{k}:\delta_{k}$ is denoted by !{l1:d1, ..., lk:dk}! and the open row $l_{1}:\delta_{1}; \dots; l_{k}:\delta_{k}; e$ is denoted by !{l1:d1, ..., lk:dk | e}!.
 
-The typing judgment has to take into account the current allowed effects. We gather them into a row $\rho$ and we write $\Gamma \vdash e : \tau / \rho$ for expression $e$ has type $\tau$ in context $\Gamma$ and can perform effects in $\rho$.
+\subsection{Typing handlers}
+\label{sec:typing-handlers}
+
+The typing judgment has to take into account the current allowed effects. We gather them into a row $R$ and we write $\Delta;\Gamma \vdash e : T / R$ for expression $e$ has type $T$ in context $\Delta;\Gamma$ and can perform effects in $R$.
+
+\begin{rem}
+  The context contains two parts $\Gamma$ and $\Delta$. $\Gamma = x : A ; \dots$ contains typed term variables and $\Delta = \alpha :: K; \dots$ kinded type variables.
+\end{rem}
 
 We give below the main typing rules that allow to understand how effect handlers should be typed. The other rules are the obvious ones and can be found in appendix \ref{sec:typing-rules}. For the sake of clarity, shallow and parameterised handlers rules have also been moved to the appendix.
 
 \begin{prooftree}
-  \AxiomC{$\Gamma \vdash p : \beta / \rho$}
-  \AxiomC{$\rho = Op : \beta \To \alpha ; \rho'$}
+  \AxiomC{$\Delta;\Gamma \vdash p : B / R$}
+  \AxiomC{$R = l : B \To A ; R'$}
   \RightLabel{$Op$}
-  \BinaryInfC{$\Gamma \vdash do\ Op(p) : \alpha / \rho$}
+  \BinaryInfC{$\Delta;\Gamma \vdash do\ l(p) : A / R$}
 \end{prooftree}
 
 \begin{prooftree}
-  \AxiomC{$\Gamma \vdash f : \beta \to_{\rho} \alpha / \rho$}
-  \AxiomC{$\Gamma \vdash t : \beta / \rho$}
+  \AxiomC{$\Delta;\Gamma \vdash f : B \to_{R} A / R$}
+  \AxiomC{$\Delta;\Gamma \vdash t : B / R$}
   \RightLabel{$App$}
-  \BinaryInfC{$\Gamma \vdash f t : \alpha / \rho$}
+  \BinaryInfC{$\Delta;\Gamma \vdash f t : A / R$}
 \end{prooftree}
 
 \begin{prooftree}
-  \AxiomC{$\Gamma, x:\beta \vdash e : \alpha / \rho$}
+  \AxiomC{$\Delta;\Gamma, x:B \vdash e : A / R$}
   \RightLabel{$Fun$}
-  \UnaryInfC{$\Gamma \vdash fun (x) \{ e \} : \beta \to_{\rho} \alpha / \rho$}
+  \UnaryInfC{$\Delta;\Gamma \vdash fun (x) \{ e \} : B \to_{R} A / R$}
 \end{prooftree}
 
 \begin{prooftree}
-  \AxiomC{$\Gamma \vdash m : \beta / \rho'$}
-  \AxiomC{$\Gamma, x:\beta \vdash n : \alpha / \rho$}
-  \AxiomC{$\Gamma, p_{i}:\beta_{i}, r_{i}:\alpha_{i} \to_{\rho} \alpha \vdash n_{i} : \alpha / \rho$}
-  \AxiomC{$\rho' = Op_{i} : \beta_{i} \To \alpha_{i} ; \rho$}
+  \AxiomC{$\Delta;\Gamma \vdash m : B / R'$}
+  \AxiomC{$\Delta;\Gamma, x:B \vdash n : A / R$}
+  \AxiomC{$R' = l_{i} : B_{i} \To A_{i} ; R_{0}$}
+  \AxiomC{$R = l_{i} : \theta ; R_{0}$}
+  \noLine
+  \BinaryInfC{$\Delta;\Gamma, p_{i}:B_{i}, r_{i}:A_{i} \to_{R} A \vdash n_{i} : A / R$}
   \RightLabel{$Handle$}
-  \QuaternaryInfC{$\Gamma \vdash handle (m) \{ case\ x \mapsto n\ case \langle Op_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : \alpha / \rho$}
+  \TrinaryInfC{$\Delta;\Gamma \vdash handle (m) \{ case\ x \mapsto n\ case \langle l_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : A / R$}
 \end{prooftree}
-
 
 \begin{prooftree}
-  \AxiomC{$\Gamma \vdash e : \alpha / \rho$}
-  \AxiomC{$\rho \subset \rho'$}
+  \AxiomC{$\Delta;\Gamma \vdash e : A / R$}
+  \AxiomC{$R \subseteq R'$}
   \RightLabel{$WeakEff$}
-  \BinaryInfC{$\Gamma \vdash e : \alpha / \rho'$}
+  \BinaryInfC{$\Delta;\Gamma \vdash e : A / R'$}
 \end{prooftree}
 
-where $\rho \subset \rho'$ means that $\rho$ is open and for all $l:\alpha$ in $\rho$, $l:\alpha$ also appears in $\rho'$.
+where $R \subseteq R'$ is defined by
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{ccccc}
+    \AxiomC{}
+    \UnaryInfC{$R \subseteq R$}
+    \DisplayProof
+    &
+      \AxiomC{}
+      \UnaryInfC{$R \subseteq \rho$}
+      \DisplayProof
+    &
+      \AxiomC{$R \subseteq R'$}
+      \UnaryInfC{$R \subseteq l:P;R'$}
+      \DisplayProof
+    &
+      \AxiomC{$R \subseteq R'$}
+      \UnaryInfC{$l:P;R \subseteq l:P;R'$}
+      \DisplayProof
+    &
+      \AxiomC{$R \subseteq R'$}
+      \UnaryInfC{$l:\theta;R \subseteq l:P;R'$}
+      \DisplayProof
+  \end{tabular}
+\end{table}
 
+Rule $Op$ states that invoking an operation requires a ambient effect row that contains it with the correct types. Rule $App$ ensure that, when applying a function, its effect row is compatible with the ambient one. The $Handle$ rule types a !handle! construct. The important thing to notice is that the row used to type $m$ obviously contains the operations $l_{i}$ handled and that after handling, all $l_{i}$s have been removed from the row. The last rule mentioned here ensures that the ambient effect row mentions effects that are \emph{allowed} to be performed but not necessary since an effect can be added to the row.
 
-Rule $Op$ states that invoking an operation requires a ambient effect row that contains it with the correct types. Rule $App$ ensure that, when applying a function, its effect row is compatible with the ambient one. The $Handle$ rule types a !handle! construct. The important thing to notice is that the row used to type $m$ obviously contains the operations $Op_{i}$ handled and that after handling, all $Op_{i}$s have been removed from the row. The last rule mentioned here ensures that the ambient effect row mentions effects that are \emph{allowed} to be performed but not necessary since an effect can be added to the row.
-
-We say that an expression $e$ type-checks only if no unhandled effects are allowed : $\Gamma \vdash e : \alpha / \cdot$, noted $\Gamma \vdash e : \alpha$.
+We say that an expression $e$ type-checks only if no unhandled effects are allowed : $\Delta;\Gamma \vdash e : T / \bullet$, noted $\Delta;\Gamma \vdash e : T$.
 
 
 \begin{thm}
-  If $\Gamma \vdash e : \alpha / \rho$, in the execution of $e$ only effects in $\rho$ are performed and not handled.
+  If $\Delta;\Gamma \vdash e : T / R$, in the execution of $e$ only effects in $R$ are performed and not handled.
 \end{thm}
 \begin{cor}
-  If $\Gamma \vdash e : \alpha$, in the execution of $e$ all effects are handled.
+  If $\Delta;\Gamma \vdash e : T$, in the execution of $e$ all effects are handled.
 \end{cor}
 
-See \cite{} for the proof.
+See \citep{} for the proof.
 
 
-\subsection{Bidirectional Typing}
+\subsection{Polymorphism} TODO
 
-\subsection{Polymorphism}
+\subsection{Bidirectional Typing} TODO ?
 
 
 \section{Contributions}
@@ -494,7 +557,7 @@ In Links we can define type aliases using the keyword !typename!.
   typename IntPair = (Int, Int) ;
   # record type
   typename Pet = (name:String, age:Int, species:String, Fur:Bool) ;
-  # function
+  # function type
   typename Comp(a, e::Row) = () ~e~> a ;
 \end{lstlisting}
 
@@ -522,6 +585,8 @@ The implementation is mostly inspired by what is done for type aliases.
 
 \subsubsection{The pollution problem}
 \label{sec:pollution-problem}
+
+TODO + cf ref 44 Tes
 
 We first introduce a problem that arises when playing with numerous effects and that we will be calling \emph{effect pollution}. Let us start with an example.
 
@@ -572,17 +637,95 @@ That kind of effect pollution could become really annoying when one works with a
 \subsubsection{State of the art}
 \label{sec:state-art}
 
+Until then, we could find two constructions that tackle this issue in the literature : \emph{lexically scoped handlers} and \emph{effect coercions}.
+
+\paragraph{Effect coercions}
+Effect coercions, also known as \emph{adaptators} (\citep{doobeedoo} section 3), are constructions that change how operations are interpreted and handled.
+
+The simplest example is the \emph{lift} or \emph{mask} coercion that masks the operation from the nearest handler. A masked operation is then handled by the second nearest handler.
+
+\begin{lstlisting}[caption=Mask coercion example]
   TODO
+\end{lstlisting}
+
+Coercions could also be exchanges, also called \emph{swap}, or effect duplication in some contexts.
+
+It turns out that, if they offer a solution to the pollution problem, they are not so practical. Moreover they seems a bit \emph{ad hoc} and are not really satisfying.
+
+\paragraph{Lexically scoped handlers}
+\cite{} Tes 38 introduces this kind of handlers where one can figure out statically which handler is invoked when. This is achieved by not having operations but computations that take an operation function as parameter.
+\begin{lstlisting}
+  lexhandle ( fun (op) { e } ) with { case <p => r> -> ... }
+\end{lstlisting}
+\begin{rem}
+  In this setting, the handler does not handle ``by name''. That's why it does only need the payload and not the label of the operation in !case <p => r>!.
+\end{rem}
+
+Biernacki et al. \cite{binders-labels} use another version of lexically scoped effects with names. Handlers and operations labels are coupled with names that binds them together. Handlers act as binders for theses names.
 
 \subsubsection{A fresh idea ?}
 \label{sec:fresh-idea}
 
-  TODO
+In \cite{tes}, de Vilhena and Pottier develop the idea of lexically scoped handlers and propose, as we do, to use fresh effect label generation. Our work has be done in parallel but it turns out that they formalised a system close to what we use and describe there.
+
+Our system has two sort of labels, noted $l$ :
+\begin{description}
+  \item[global labels] labels as previously used, defined uniquely by their name
+  \item[local labels] labels that are restricted to a scope and are identified by their name together with an identifier $id \in \N \cup \{\bot\}$
+\end{description}
+$$ l ::= Op \mid `Op^{\langle id\rangle} $$
+To distinguish local and global labels we use a backtick for local ones. The programmer does not need to find by themselves the identifier. They do not specify any (which is represented by the ``free'' identifier $\bot$) and fresh unique identifiers are created automatically.
+
+We define a new construct !fresh `A { e }!  where !e! is any list of function and/or aliases definitions. This is a binding for local labels. When this is encountered a new unique identifier is generated for !`A! and each local occurrence of !`A! in the scope !e! is bound to this identifier.
+\begin{rem}
+  When several !fresh! bindings with the same name are nested, a label is bound by the innermost !fresh!.
+\end{rem}
+
+\paragraph{Going out of scope}
+A function, value or alias that has a local label in its type cannot escape the scope, but we do want to keep some of the declarations made in that scope. When leaving the scope, for each declaration, we try to \emph{erase} the fresh label $l$ from its type. If it is possible, ie if the label has a polymorphic or absent presence, the function/value/alias declared is added into the context and is available in the rest of the program, its type being cleaned from any local label. Otherwise, the function/value/alias is removed from the context.
+
+We note $A \uparrow_{l} A'$ if one can erase label $l$ from type $A$ and this will give type $A'$, and $A \downarrow_{l}$ if it is not possible to erase label $l$ from type $A$, ie if there exists no $A'$ such that $A \uparrow_{l} A'$. Below are the most interesting rules that define the erasure of a row type. The rest of the rules can be found in appendix \ref{sec:erasing-procedure}.
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{cccc}
+    \AxiomC{$R\uparrow_{l}R'$}
+    \UnaryInfC{$l:-;R\uparrow_{l}R'$}
+    \DisplayProof
+    &
+      \AxiomC{$R\uparrow_{l}R'$}
+      \UnaryInfC{$l:\theta;R\uparrow_{l}R'$}
+      \DisplayProof
+    &
+      \AxiomC{$T\uparrow_{l}T'$}
+      \AxiomC{$R\uparrow_{l}R'$}
+      \AxiomC{$l\neq l'$}
+      \TrinaryInfC{$l':T;R \uparrow_{l} l':T' ; R'$}
+      \DisplayProof
+    &
+      \AxiomC{}
+      \UnaryInfC{$l:T;R \downarrow_{l}$}
+      \DisplayProof
+  \end{tabular}
+\end{table}
+
+The two first rules state that absent or polymorphic instances of the label can be erased, the third one shows how the erasure propagates into the row and the last one forces the erasure of a present instance to fail.
+
+\begin{thm}
+  For any label $l$ and type $T$, exactly one of the following holds
+  \begin{itemize}
+    \item either there exists a unique $T'$ such that $T\uparrow_{l}T'$. we write $e(T) = T'$
+    \item or $T\downarrow_{l}$
+  \end{itemize}
+\end{thm}
+
+At the end of the scope, for each declaration, we type it and get its type $T$. If $e(T)$ exists, we replace its type by $e(T)$ in the context. Otherwise, we remove the object from the context.
+Thus, local labels cannot escape.
 
 \subsubsection{Implementation and usage in Links}
 \label{sec:impl-usage-links}
 
-I added the possibility to define local labels, ie labels that can only be used in a specific scope.
+The possibility to define local labels, ie labels that can only be used in a specific scope, has been added to Links.
 
 The user can define one or more local labels that will be bound in the scope with
 \begin{lstlisting}
@@ -592,9 +735,6 @@ The user can define one or more local labels that will be bound in the scope wit
 \end{lstlisting}
 
 He can use the local labels so defined in the scope as any other effect label but he cannot use them outside that scope.
-
-\paragraph{Going out of scope} TODO
-A function, a value or a type alias that has such a label in its type cannot escape the scope. When we leave the scope, we try to erase the label from the type and if it is possible (ie if the label as a polymorphic or absent presence) the function/value is available in the rest of the program, it's type being cleaned from any local label. Otherwise, the function/value/typename is removed from the context and trying to use it will cause an unknown variable or Unbound type constructor error.
 
 \paragraph{Remaining issues}
 There is one issue remaining. The effect aliases being inlined before type-checking, we can get a label going out of scope. This will be identified by the typechecker and will raise a !local label ... is not bound error!. It seems that the effectname has escaped the scope.
@@ -620,11 +760,19 @@ Briefly, here is how the code works. All labels in the code can be either global
 
 \subsection{Polymorphic Operations}
 
+TODO
 
 
 
+\section{Conclusion}
+\label{sec:conclusion}
 
+TODO
 
+\section{Acknowledgement}
+\label{sec:acknowledgement}
+
+TODO
 
 
 
@@ -637,7 +785,7 @@ Briefly, here is how the code works. All labels in the code can be either global
 
 
 \bibliographystyle{alpha}
-\bibliography{biblio.bib}
+\bibliography{biblio}
 
 
 
@@ -654,17 +802,38 @@ Briefly, here is how the code works. All labels in the code can be either global
 
 
 
+\newpage
 
 \appendix
+
+\section*{Appendix}
+
+\section{Artefact}
+\label{sec:code-production}
+
+The code that I have produced during this internship is available in my Links fork on GitHub \cite{gh:mylinks}. The notable branches are the master, the \texttt{fresh-label} branch that contains the work described in section \ref{sec:fresh-labels} and the \texttt{polymorphic-operations} branch that contains the work described in section \ref{sec:poly-op}.
+
+The pull requests that I opened are available here \cite{gh:prs}.
+
+The Links repository can be found at \cite{gh:links}. Set up and installation instructions are available on Links website \cite{links-org} or you can built in from source using the Makefile provided in the repository. After having installed the dependencies with !$ opam install --deps-only links!, a simple !$ make! should be sufficient.
+
+To replicate the examples in this paper, use preferably the branches of my fork... TODO WHEN RELEASE !!
 
 \section{Links technicalities}
 \label{sec:tech}
 
-Here are some technical points on Links syntax and semantics
+Here are some technical points on Links syntax and semantics that could be useful to the reader.
 
 \subsection{Comments}
 \label{sec:comments}
 Everything following a !#! in a line is a comment.
+
+\subsection{Tuples}
+\label{sec:tuples}
+A tuple is a closed record with positive integer labels. For instance !(foo, bar)! is the same as !(1=foo, 2=bar)!.
+
+Unit !()! is the empty record.
+
 
 \subsection{Operation type}
 \label{sec:operation-type}
@@ -672,7 +841,7 @@ An operation should always be of type !(a) => b! but one can write !Op:b! which 
 
 \subsection{Empty type}
 \label{sec:tech:zero}
-The empty type is !Zero!. To destroy it, we use the following !absurd! function.
+The empty variant type ![||]! is !Zero!. To destroy it, we use the following !absurd! function.
 \begin{lstlisting}
   sig absurd : (Zero) -> a
   fun absurd(x) {
@@ -692,7 +861,7 @@ Function types are written !(a) {...}-> b!. The domain type is always embraced w
 
 One can write !(a) -e-> b! when !e! is a row variable or an effect type and !(a) -> b! stands for !(a) -_-> b! : the function is then polymorphic in its effects.
 
-!(a) {...}~> b!, !(a) ~e~> b! or !(a) ~> b! is a syntactic sugar that adds the special effect !wild:()! to the row. This is used to denote ``wild'' code, ie code that cannot be transformed into a SQL query. Recursion, IO or handlers are typically wild. \cite{}
+!(a) {...}~> b!, !(a) ~e~> b! or !(a) ~> b! is a syntactic sugar that adds the special effect !wild:()! to the row. This is used to denote ``wild'' code, ie code that cannot be transformed into a SQL query. Recursion, IO or handlers are typically wild. \citep{}
 
 For more details on row typing, see section \ref{sec:row-typ}.
 
@@ -714,28 +883,112 @@ For better handler composability, we write handlers that take a computation and 
 \section{Typing Rules}
 \label{sec:typing-rules}
 
+We give extra typing rules for shallow and parameterised handlers.
+
 \begin{prooftree}
-  \AxiomC{$\Gamma \vdash m : \beta / \rho'$}
-  \AxiomC{$\Gamma, x:\beta \vdash n : \alpha / \rho$}
-  \AxiomC{$\rho' = Op_{i} : \beta_{i} \To \alpha_{i} ; \rho$}
+  \AxiomC{$\Delta;\Gamma \vdash m : B / R'$}
+  \AxiomC{$\Delta;\Gamma, x:B \vdash n : A / R$}
+  \AxiomC{$R' = l_{i} : B_{i} \To A_{i} ; R_{0}$}
+  \AxiomC{$R = l_{i} : \theta ; R_{0}$}
   \noLine
-  \UnaryInfC{$\Gamma, p_{i}:\beta_{i}, r_{i}:\alpha_{i} \to_{\rho'} \alpha \vdash n_{i} : \alpha / \rho$}
+  \BinaryInfC{$\Delta;\Gamma, p_{i}:B_{i}, r_{i}:A_{i} \to_{R'} A \vdash n_{i} : A / R$}
   \RightLabel{$ShallowHandle$}
-  \TrinaryInfC{$\Gamma \vdash shallowhandle (m) \{ case\ x \mapsto n\ case \langle Op_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : \alpha / \rho$}
+  \TrinaryInfC{$\Delta;\Gamma \vdash shallowhandle (m) \{ case\ x \mapsto n\ case \langle l_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : A / R$}
 \end{prooftree}
 
 \vspace{11pt}
 
 \begin{prooftree}
-  \AxiomC{$\Gamma \vdash m : \beta / \rho'$}
-  \AxiomC{$\Gamma \vdash w : \gamma / \rho'$}
+  \AxiomC{$\Delta;\Gamma \vdash m : B / R'$}
+  \AxiomC{$\Delta;\Gamma \vdash w : \gamma / R'$}
   \noLine
-  \BinaryInfC{$\Gamma, x:\beta, s:\gamma \vdash n : \alpha / \rho$}
-  \AxiomC{$\rho' = Op_{i} : \beta_{i} \To \alpha_{i} ; \rho$}
+  \BinaryInfC{$\Delta;\Gamma, x:B, s:\gamma \vdash n : A / R$}
+  \AxiomC{$R' = l_{i} : B_{i} \To A_{i} ; R$}
+  \AxiomC{$R = l_{i} : \theta ; R_{0}$}
   \noLine
-  \UnaryInfC{$\Gamma, s:\gamma, p_{i}:\beta_{i}, r_{i}:(\alpha_{i},\gamma) \to_{\rho'} \alpha \vdash n_{i} : \alpha / \rho$}
+  \BinaryInfC{$\Delta;\Gamma, s:\gamma, p_{i}:B_{i}, r_{i}:(A_{i},\gamma) \to_{R'} A \vdash n_{i} : A / R$}
   \RightLabel{$ParamHandle$}
-  \BinaryInfC{$\Gamma \vdash handle (m) (s \from w) \{ case\ x \mapsto n\ case \langle Op_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : \alpha / \rho$}
+  \BinaryInfC{$\Delta;\Gamma \vdash handle (m) (s \from w) \{ case\ x \mapsto n\ case \langle l_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : A / R$}
 \end{prooftree}
+
+\section{Erasing procedure}
+\label{sec:erasing-procedure}
+
+We give the missing rules for the erasure procedure introduced in section \ref{sec:fresh-idea}.
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{cc}
+    \AxiomC{$x = \alpha, P, \rho, \bullet$}
+    \UnaryInfC{$x\uparrow_lx$}
+    \DisplayProof
+    &
+      \AxiomC{$A\uparrow_{l}A'$}
+      \AxiomC{$B\uparrow_{l}B'$}
+      \AxiomC{$R\uparrow_{l}R'$}
+      \TrinaryInfC{$A \to_{R} B \uparrow_{l} A' \to_{R'} B'$}
+      \DisplayProof
+  \end{tabular}
+\end{table}
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{ccc}
+    \AxiomC{$A\uparrow_{l}A'$}
+    \AxiomC{$B\uparrow_{l}B'$}
+    \BinaryInfC{$A \To B \uparrow_{l} A' \To B'$}
+    \DisplayProof
+    &
+      \AxiomC{$A\uparrow_{l}A'$}
+      \AxiomC{$B\uparrow_{l}B'$}
+      \BinaryInfC{$A\ B \uparrow_{l} A'\ B'$}
+      \DisplayProof
+    &
+      \AxiomC{$T\uparrow_{l}T'$}
+      \UnaryInfC{$\forall \alpha::K.T\uparrow_{l}\forall\alpha::K.T'$}
+      \DisplayProof
+  \end{tabular}
+\end{table}
+
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{ccc}
+      \AxiomC{$A\downarrow_{l}$}
+      \UnaryInfC{$A \to_{R} B \downarrow_{l}$}
+      \DisplayProof
+    &
+      \AxiomC{$B\downarrow_{l}$}
+      \UnaryInfC{$A \to_{R} B \downarrow_{l}$}
+      \DisplayProof
+    &
+      \AxiomC{$R\downarrow_{l}$}
+      \UnaryInfC{$A \to_{R} B \downarrow_{l}$}
+      \DisplayProof
+  \end{tabular}
+\end{table}
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{ccccc}
+      \AxiomC{$A\downarrow_{l}$}
+      \UnaryInfC{$A \To B \downarrow_{l}$}
+      \DisplayProof
+    &
+      \AxiomC{$B\downarrow_{l}$}
+      \UnaryInfC{$A \To B \downarrow_{l}$}
+      \DisplayProof
+    &
+      \AxiomC{$A\uparrow_{l}A'$}
+      \UnaryInfC{$A\ B \downarrow_{l}$}
+      \DisplayProof
+    &
+      \AxiomC{$B\uparrow_{l}B'$}
+      \UnaryInfC{$A\ B \downarrow_{l}$}
+      \DisplayProof
+    &
+      \AxiomC{$T\downarrow_{l}$}
+      \UnaryInfC{$\forall \alpha::K.T\downarrow_{l}$}
+      \DisplayProof
+  \end{tabular}
+\end{table}
 
 \end{document}
