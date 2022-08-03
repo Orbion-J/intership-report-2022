@@ -4,6 +4,7 @@ src=report
 in=$(pathorigin)/newfile.tex
 
 dir=.latex-out
+pdfdir=pdf
 
 FLAGS=--shell-escape -output-dir=$(dir)
 latex=pdflatex
@@ -20,7 +21,7 @@ $(dir)/$(src).pdf : $(src).tex preambule/*
 	$(compile)
 
 
-.PHONY : t
+.PHONY : t savepdf
 t :
 	$(compile)
 	bibtex $(dir)/$(src)
@@ -30,6 +31,10 @@ t :
 	rm $(src).blg
 	cp $(dir)/$(src).pdf $(src).pdf
 
+savepdf : $(pdfdir) $(src).pdf
+	cp $(src).pdf $(pdfdir)/$(src).pdf
+	git add -f $(pdfdir)/$(src).pdf
+	sudo git push
 
 preambule :
 	cp -r $(pathorigin)/preambule/ preambule
@@ -38,8 +43,10 @@ my-sty :
 	ln -s $(pathorigin)/my-sty my-sty
 
 $(dir) :
-	mkdir $(dir)
+	mkdir $@
 
+$(pdfdir) :
+	mkdir $@
 
 .PHONY : init init-dir new clean purge
 

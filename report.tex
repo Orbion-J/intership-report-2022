@@ -52,7 +52,7 @@
 \renewcommand\shortauthors{Robin Jourde}
 
 
-\title[M1 Intership Report]{M1 Internship Report : Effect Typing for Links}
+\title[M1 Internship Report]{M1 Internship Report : Effect Typing for Links}
 \subtitle{2 May 2022 -- 22 July 2022, The University of Edinburgh}
 
 \date{2 May 2022 -- 22 July 2022}
@@ -64,7 +64,7 @@
   This paper is the report of my internship at the School of Informatics of the University of Edinburgh with Sam Lindley and Daniel Hillerström from 2 May 2022 to 22 July 2022.
   Effect handlers are a language feature that is becoming more and more widespread. They allow the user to define and compose many functionalities from exceptions to concurrency and probabilistic programming.
   Links is an experimental tierless functional language for the web, mainly developed in the University of Edinburgh. Among its numerous features, Links supports effect handlers.
-  The goal of my intership was to improve the effect typing system of Links, allowing aliases, avoiding pollution and allowing polymorphic operations.
+  The goal of my internship was to improve the effect typing system of Links, allowing aliases, avoiding pollution and allowing polymorphic operations.
 \end{abstract}
 
 
@@ -84,7 +84,7 @@ TODO
  Links is a functional programming language designed to make web programming easier.
 \end{fquote}
 
-Links \citep{} is a tierless functional programming language for the web developed at the University of Edinburgh. Typical web development involves the manipulation of several \emph{tiers} which means several, sometimes really different, programming languages :
+Links \citep{links} is a tierless functional programming language for the web developed at the University of Edinburgh. Typical web development involves the manipulation of several \emph{tiers} which means several, sometimes really different, programming languages :
 \begin{itemize}
   \item the server side written in Python or Java for instance
   \item the client side in JavaScript and HTML/CSS
@@ -104,7 +104,7 @@ Links also supports numerous useful features including
 \end{itemize}
 It is used as an experimental language by researchers to try out new ideas and what could be future widespread programming languages features.
 
-Links is strict, statically typed and use a Hindley-Milner type system as well as a Rémy style row typing system \ref{sec:row-typ} \citep{row-typ}. Its syntax is inspired from JavaScript and ML. Its compiler \citep{} is written in OCaml.
+Links is strict, statically typed and use a Hindley-Milner type system as well as a Rémy style row typing system \ref{sec:row-typ} \citep{row-typ}. Its syntax is inspired from JavaScript and ML. Its compiler \citep{gh:links} is written in OCaml.
 
 \begin{rem}
   In appendix \ref{sec:tech}, the reader could find some technical points on Links syntax and semantics that are not worth it to develop here. He is invited to look at it whenever needed.
@@ -535,12 +535,16 @@ We say that an expression $e$ type-checks only if no unhandled effects are allow
   If $\Delta;\Gamma \vdash e : T$, in the execution of $e$ all effects are handled.
 \end{cor}
 
-See \citep{} for the proof.
+See \citep{links-effect} for the proof.
 
 
-\subsection{Polymorphism} TODO
+\subsection{Polymorphism}
 
-\subsection{Bidirectional Typing} TODO ?
+Links supports a System F \cite{proof-type-girard} style polymorphism. Types can contains kinded variables $\alpha$ that can be abstracted over with a $\forall \alpha :: K$. A polymorphic type can be instantiated with a type application.
+
+For more details on Links polymorphism, one could look at \cite{polymorph-rpc-links}.
+
+% \subsection{Bidirectional Typing} TODO ?
 
 
 \section{Contributions}
@@ -586,7 +590,7 @@ The implementation is mostly inspired by what is done for type aliases.
 \subsubsection{The pollution problem}
 \label{sec:pollution-problem}
 
-TODO + cf ref 44 Tes
+TODO examples + cf ref 44 Tes
 
 We first introduce a problem that arises when playing with numerous effects and that we will be calling \emph{effect pollution}. Let us start with an example.
 
@@ -653,7 +657,7 @@ Coercions could also be exchanges, also called \emph{swap}, or effect duplicatio
 It turns out that, if they offer a solution to the pollution problem, they are not so practical. Moreover they seems a bit \emph{ad hoc} and are not really satisfying.
 
 \paragraph{Lexically scoped handlers}
-\cite{} Tes 38 introduces this kind of handlers where one can figure out statically which handler is invoked when. This is achieved by not having operations but computations that take an operation function as parameter.
+\cite{lex-eff} introduces this kind of handlers where one can figure out statically which handler is invoked when. This is achieved by not having operations but computations that take an operation function as parameter.
 \begin{lstlisting}
   lexhandle ( fun (op) { e } ) with { case <p => r> -> ... }
 \end{lstlisting}
@@ -759,8 +763,34 @@ Briefly, here is how the code works. All labels in the code can be either global
 
 
 \subsection{Polymorphic Operations}
+\label{sec:poly-op}
 
-TODO
+My last contribution was to implement the support for polymorphic operations in Links. Until then, only handlers could be polymorphic but not the operations themselves. However this could be useful in a lot of situations. For instance, when writing exceptions, one would want to have a polymorphic !Fail! operation so that it could be used in any location. Without actual polymorphism this could be simulated with a Zero type and its destructor as we've done in previous examples.
+
+This is easily added since polymorphism is already incorporated in Links. The only thing to add is to allow operations to be of the form $\forall \alpha ::K. \dots$ and not only fat arrow types.
+
+To make an operation polymorphic, the handler should be annotated with a polymorphic type. The type system cannot infer polymorphism and is not able to propagate the polymorphism information in the signature down to the effect cases. This is something that could be improved in the future.
+
+\begin{lstlisting}[caption=Polymorphism example]
+  sig catch : (() {Fail:forall a.a |e}~> b) {Fail{_} |e}~> Maybe(b)
+  fun catch(m) {
+    handle(m()) {
+      case <Fail => k> : (forall a. () => a) -> Nothing
+      case x -> Just(x)
+    }
+  }
+
+  sig f : () {Fail:forall a.a}~> Int
+  fun f () {
+    if (do Fail)
+      42
+    else
+      do Fail
+  }
+
+  catch (f)
+  links> Nothing : Maybe (Int)
+\end{lstlisting}
 
 
 
@@ -839,6 +869,8 @@ Unit !()! is the empty record.
 \label{sec:operation-type}
 An operation should always be of type !(a) => b! but one can write !Op:b! which will be desugared into !Op:() => b!.
 
+A polymorphic operation type can also be sugared. One can write !Op:forall a. b! for !Op:forall a. () => b!. It is worth noting that this does \emph{not} stand for !Op:() => forall a. b!.
+
 \subsection{Empty type}
 \label{sec:tech:zero}
 The empty variant type ![||]! is !Zero!. To destroy it, we use the following !absurd! function.
@@ -861,7 +893,7 @@ Function types are written !(a) {...}-> b!. The domain type is always embraced w
 
 One can write !(a) -e-> b! when !e! is a row variable or an effect type and !(a) -> b! stands for !(a) -_-> b! : the function is then polymorphic in its effects.
 
-!(a) {...}~> b!, !(a) ~e~> b! or !(a) ~> b! is a syntactic sugar that adds the special effect !wild:()! to the row. This is used to denote ``wild'' code, ie code that cannot be transformed into a SQL query. Recursion, IO or handlers are typically wild. \citep{}
+!(a) {...}~> b!, !(a) ~e~> b! or !(a) ~> b! is a syntactic sugar that adds the special effect !wild:()! to the row. This is used to denote ``wild'' code, ie code that cannot be transformed into a SQL query. Recursion, IO or handlers are typically wild. See \citep{corelinks} for justifications and details on the use of row typing for database integration.
 
 For more details on row typing, see section \ref{sec:row-typ}.
 
@@ -977,11 +1009,11 @@ We give the missing rules for the erasure procedure introduced in section \ref{s
       \UnaryInfC{$A \To B \downarrow_{l}$}
       \DisplayProof
     &
-      \AxiomC{$A\uparrow_{l}A'$}
+      \AxiomC{$A\downarrow_{l}$}
       \UnaryInfC{$A\ B \downarrow_{l}$}
       \DisplayProof
     &
-      \AxiomC{$B\uparrow_{l}B'$}
+      \AxiomC{$B\downarrow_{l}$}
       \UnaryInfC{$A\ B \downarrow_{l}$}
       \DisplayProof
     &

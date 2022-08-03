@@ -190,3 +190,47 @@ year={2022},
 howpublished="preprint available at \url{http://cambium.inria.fr/~fpottier/publis/de-vilhena-pottier-tes.pdf}",
 url={http://cambium.inria.fr/~fpottier/publis/de-vilhena-pottier-tes.pdf}
 }
+
+@book{proof-type-girard,
+author = {Girard, Jean-Yves and Taylor, Paul and Lafont, Yves},
+title = {Proofs and Types},
+year = {1989},
+isbn = {0521371813},
+publisher = {Cambridge University Press},
+address = {USA}
+}
+
+@article{polymorph-rpc-links,
+  author    = {Kwanghoon Choi and
+               James Cheney and
+               Simon Fowler and
+               Sam Lindley},
+  title     = {A Polymorphic {RPC} Calculus},
+  journal   = {CoRR},
+  volume    = {abs/1910.10988},
+  year      = {2019},
+  url       = {http://arxiv.org/abs/1910.10988},
+  eprinttype = {arXiv},
+  eprint    = {1910.10988},
+  timestamp = {Wed, 22 Jan 2020 18:37:05 +0100},
+  biburl    = {https://dblp.org/rec/journals/corr/abs-1910-10988.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{lex-eff,
+author = {Schuster, Philipp and Brachth\"{a}user, Jonathan Immanuel and M\"{u}ller, Marius and Ostermann, Klaus},
+title = {A Typed Continuation-Passing Translation for Lexical Effect Handlers},
+year = {2022},
+isbn = {9781450392655},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3519939.3523710},
+doi = {10.1145/3519939.3523710},
+abstract = {Effect handlers are a language feature which enjoys popularity in academia and is also gaining traction in industry. Programs use abstract effect operations and handlers provide meaning to them in a delimited scope. Each effect operation is handled by the dynamically closest handler. Using an effect operation outside of a matching handler is meaningless and results in an error. A type-and-effect system prevents such errors from happening. Lexical effect handlers are a recent variant of effect handlers with a number of attractive properties. Just as with traditional effect handlers, programs use effect operations and handlers give meaning to them. But unlike with traditional effect handlers, the connection between effect operations and their handler is lexical. Consequently, they typically have different type-and-effect systems. The semantics of lexical effect handlers as well as their implementations use multi-prompt delimited control. They rely on the generation of fresh labels at runtime, which associate effect operations with their handlers. This use of labels and multi-prompt delimited control is theoretically and practically unsatisfactory. Our main result is that typed lexical effect handlers do not need the full power of multi-prompt delimited control. We present the first CPS translation for lexical effect handlers to pure System F. It preserves well-typedness and simulates the traditional operational semantics. Importantly, it does so without requiring runtime labels. The CPS translation can be used to study the semantics of lexical effect handlers as well as as an implementation technique.},
+booktitle = {Proceedings of the 43rd ACM SIGPLAN International Conference on Programming Language Design and Implementation},
+pages = {566–579},
+numpages = {14},
+keywords = {continuation-passing style, lexical effect handlers},
+location = {San Diego, CA, USA},
+series = {PLDI 2022}
+}
