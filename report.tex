@@ -1,4 +1,4 @@
-\documentclass[11pt, nonacm=true, language=french, language=english]{acmart}
+\documentclass[10pt, nonacm=true, language=french, language=english]{acmart}
 
 \input{./preambule/preambule.tex}
 \usepackage{listings}
@@ -59,16 +59,34 @@
 
 \begin{document}
 
-
 \begin{abstract}
-  This paper is the report of my internship at the School of Informatics of the University of Edinburgh with Sam Lindley and Daniel Hillerström from 2 May 2022 to 22 July 2022.
-  Effect handlers are a language feature that is becoming more and more widespread. They allow the user to define and compose many functionalities from exceptions to concurrency and probabilistic programming.
-  Links is an experimental tierless functional language for the web, mainly developed in the University of Edinburgh. Among its numerous features, Links supports effect handlers.
-  The goal of my internship was to improve the effect typing system of Links, allowing aliases, avoiding pollution and allowing polymorphic operations.
+  This paper is the report of my internship at the School of Informatics of the University of Edinburgh with Sam Lindley and Daniel Hillerström from the Laboratory for Foundations of Computer Science. My intership took place from 2 May 2022 to 22 July 2022 in the Informatics Forum.
 \end{abstract}
 
 
 \maketitle
+
+\vspace*{\fill}
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{logo-ens-lyon.jpeg}
+\end{center}
+
+\vspace*{\fill}
+
+\begin{center}
+\includegraphics[width=0.6\textwidth]{logo-informatics-uoe.jpg}
+\end{center}
+
+\vspace*{\fill}
+
+\begin{center}
+\includegraphics[width=0.6\textwidth]{logo-lfcs.png}
+\end{center}
+
+\vspace*{\fill}
+
+\newpage
 
 \tableofcontents
 
@@ -76,9 +94,13 @@
 
 \section{Introduction}
 
-TODO
+The goal of my internship was to improve the effect typing system of the Links language, allowing aliases, avoiding effect pollution and allowing polymorphic operations.
+
+Links (section \ref{sec:links}) is an experimental tierless functional language for the web, mainly developed in the University of Edinburgh. Among its numerous features, Links supports effect handlers. Effect handlers (section \ref{sec:handlers}) are a language feature that is becoming more and more widespread. They allow the user to define and compose many functionalities from exceptions to concurrency and probabilistic programming. My work (section \ref{sec:contribution}) focused on the typing system (section \ref{sec:typing}), especially dedicated to these handlers.
+
 
 \section{Links}
+\label{sec:links}
 
 \begin{fquote}[Links website \cite{links-org}]
  Links is a functional programming language designed to make web programming easier.
@@ -136,12 +158,10 @@ Effect handlers can be seen as a generalisation of exception handlers. One can p
 Effect handlers are being shown a growing industrial interest nowadays. Below are listed some of the biggest projects that uses and implement some kind of effect handlers
 \begin{itemize}
   \item GitHub code analysis library Semantic (used in more than 25 million repositories)
-  \item Meta JavaScript UI library React (used in mire than 2 million websites)
-  \item Uber Pyro language
-  \item WebAssembly
+  \item Meta JavaScript UI library React (used in more than 2 million websites)
+  \item Uber Pyro language (Poutine library) \cite{pyro, pyro-poutine}
+  \item WebAssembly \cite{wasmfx}
 \end{itemize}
-
-TODO : refs ?
 
 \subsection{Syntax and usage}
 
@@ -378,6 +398,7 @@ Those three kinds of handlers are equivalent in the sense that it is possible to
 If it is easy to see how to express a deep handler from a parameterised handler or from a shallow handler, the converse is not so obvious. See \citep{ehgc}, section 4 or \citep{daniel-thesis}, section 6.
 
 \section{Typing}
+\label{sec:typing}
 
 Links is a strongly statically typed language. In this section, we describe some main features of Links type system that allow us to type effect handlers.
 
@@ -403,7 +424,7 @@ We require also that in one row, labels are all distinct and we consider row equ
 \end{ex}
 
 
-\subsection{Links Type System}
+\subsection{Links type system}
 \label{sec:links-typ}
 
 We describe in this section and the following Links type system. In order to avoid useless complexity, we focus on the parts of the type system that are useful to understand effect typing. We omit easy and common parts as well as some parts used only for other Links features.
@@ -544,14 +565,13 @@ Links supports a System F \cite{proof-type-girard} style polymorphism. Types can
 
 For more details on Links polymorphism, one could look at \cite{polymorph-rpc-links}.
 
-% \subsection{Bidirectional Typing} TODO ?
-
 
 \section{Contributions}
+\label{sec:contribution}
 
 During my internship I added some new features to Links that have been merged into the 0.0.0 release.
 
-\subsection{Effect Aliases}
+\subsection{Effect aliases}
 
 In Links we can define type aliases using the keyword !typename!.
 \begin{lstlisting}[caption=Type alias examples]
@@ -584,59 +604,65 @@ Recursive effect aliases are not available for now. The aliases are replaced by 
 
 The implementation is mostly inspired by what is done for type aliases.
 
-\subsection{Fresh Labels}
+\subsection{Fresh labels}
 \label{sec:fresh-labels}
 
 \subsubsection{The pollution problem}
 \label{sec:pollution-problem}
 
-TODO examples + cf ref 44 Tes
-
 We first introduce a problem that arises when playing with numerous effects and that we will be calling \emph{effect pollution}. Let us start with an example.
 
 \begin{lstlisting}
-  sig safe_sqrt : ( Comp(a, {Fail:Zero, Sqrt:(Float)=>Float| e}) ) -> Comp(a , {Fail:Zero, Sqrt{_} | e})
-  fun safe_sqrt (m) () {
-    handle (m())  {
-        case <Sqrt(x) => r> -> r (if (x<0.0) absurd(do Fail) else sqrt(x))
-        case x -> x
+  sig receives : ([Int]) -> ( Comp(a, {Fail:Zero, Receive:Int |e}) ) -> Comp(a , {Fail:Zero, Receive{_}|e})
+  fun receives (ss) (h) () {
+    handle (h()) (ss<-ss) {
+      case <Receive => r> -> switch (ss) {
+        case [] -> absurd(do Fail)
+        case h::t -> r (h,t)
+      }
+    case x -> x
     }
-  }
-
-  sig maybe_sqrt : ( Comp(a, {Fail:Zero, Sqrt:(Float)=>Float| e}) ) -> Comp(Maybe(a) , {Fail{_}, Sqrt{_} | e})
-  fun maybe_sqrt (m) {
-    maybe ( safe_sqrt( m ) )
   }
 \end{lstlisting}
 
-Let !safe_sqrt! be a handler for the operation !Sqrt! that takes a float and computes its square root. If the number is negative, the handler raises a failure via the !Fail! operation. Let !maybe_sqrt! the composition of the !maybe! handler for failures seen previously and the !safe_sqrt! handler.
+Let !receives! be a (parameterised) handler for the operation !Receive! that provides an integer. This handler will give the integers from a list that it has been given. When the end of the list is reached, an error is raised.
+
 \begin{lstlisting}
-  fun shrink (x) {
-    var y = do Sqrt(x) ;
-    if (y < x)
-      y
-    else
-      absurd(do Fail)
+  fun not_too_big () {
+    var x = do Receive ;
+    if (x >= 42)
+       absurd(do Fail)
+    else x
   }
 
-  fun end (m) () {
-    handle (m()) {
-      case x -> [x]
-      case <Fail> -> []
+  typename Sized(a) = (val:Maybe(a), big:Bool) ;
+
+  sig solve_too_big : ( Comp(a, {Fail:Zero |e}) ) -> Comp(Sized(a), {Fail{_}|e})
+  fun solve_too_big (h) () {
+    handle (h()) {
+      case <Fail> -> (val=Nothing, big=true)
+      case x      -> (val=Just(x), big=false)
     }
   }
-
-  fun f () {
-    end ( maybe_sqrt ( fun () { shrink(1.2) +. shrink(0.3) } ) ) ()
-  }
-
-  links> f () ;
-  [Nothing] : [Maybe(Float)]
 \end{lstlisting}
 
-Let us image that another piece of code describe above uses this !Sqrt! feature to compute its square roots. The function !shrink! takes the square root and then checks whether the number has shrunk. If it is not the case, it raises an exception catch by the handler !end!. What could happen there is that the !Fail! exception used for !Sqrt! can collided with the !Fail! exception used by this piece of code. That is what happen in function !f! : this should have given a empty list since all square roots are correct and one value is not shrunk but the !Fail! from the !shrink! is catch by !maybe_sqrt! that returns !Nothing!.
+Let us imagine another piece of code that uses this effect !Receive! but does not want too big numbers. When something too big is given, a failure is raised and then catch by a handler that will keep track of it.
 
-That kind of effect pollution could become really annoying when one works with a large amount of code and it reduces modularity.
+What happen if we want to have these work together ?
+
+\begin{lstlisting}
+  fun two () { not_too_big () + not_too_big () }
+
+  links> solve_too_big( maybe( receives ([21,21,21]) ( two ))) () ;
+  (big = false, val = Just(Just(42))) : Sized (Maybe (Int))
+
+  links> solve_too_big( maybe( receives ([42,42,42]) ( two ))) () ;
+  (big = false, val = Just(Nothing)) : Sized (Maybe (Int))
+\end{lstlisting}
+
+If we compose handlers the way above, we see that 666 is too big but the !big! value is set to false. The !Fail! raised by !not_too_big! has been catch by !maybe!. The shared !Fail! effects interfere and are mixed up. This is what we call \emph{effect pollution}.
+
+That kind of effect pollution could become really annoying when one works with a large amount of code and numerous effects and handlers and it reduces modularity.
 
 \subsubsection{State of the art}
 \label{sec:state-art}
@@ -647,10 +673,6 @@ Until then, we could find two constructions that tackle this issue in the litera
 Effect coercions, also known as \emph{adaptators} (\citep{doobeedoo} section 3), are constructions that change how operations are interpreted and handled.
 
 The simplest example is the \emph{lift} or \emph{mask} coercion that masks the operation from the nearest handler. A masked operation is then handled by the second nearest handler.
-
-\begin{lstlisting}[caption=Mask coercion example]
-  TODO
-\end{lstlisting}
 
 Coercions could also be exchanges, also called \emph{swap}, or effect duplication in some contexts.
 
@@ -740,6 +762,47 @@ The user can define one or more local labels that will be bound in the scope wit
 
 He can use the local labels so defined in the scope as any other effect label but he cannot use them outside that scope.
 
+\paragraph{Solving pollution}
+This can be used to solve pollution issues by shadowing effects that would interfer with a local name.
+
+\begin{lstlisting}[caption=Using local effects to avoid pollution]
+  fresh `Fail {
+
+    sig protect : (Comp(a, {`Fail:Zero, Fail:Zero | e})) -> Comp(a, {Fail{_}, `Fail:Zero|e})
+    fun protect (m) () {
+      handle (m()) {
+          case <Fail => k>-> k (do `Fail)
+      }
+    }
+
+    sig unprotect : (Comp(a, {`Fail:Zero, Fail:Zero | e})) -> Comp(a, {`Fail{_}, Fail:Zero|e})
+    fun unprotect (m) () {
+      handle (m()) {
+          case <`Fail => k> -> k (do Fail)
+      }
+    }
+
+    typename CNonLoc(a,e::Eff) = Comp(a, {Receive:Int, Fail:Zero, `Fail-    |e}) ;
+    typename CLoc(a,e::Eff)    = Comp(a, {Receive:Int, Fail:Zero, `Fail:Zero|e}) ;
+
+    sig protected_receives : ([Int]) -> (CNonLoc(a,{ |e})) -> Comp(Maybe(a), {Receive{_}, Fail:Zero, `Fail{_} |e})
+    fun protected_receives (xs) (h) { unprotect ( maybe( receives ([xs]) ( protect ( h : CLoc(a,{ |e}) <- (CNonLoc(a,{ |e}))
+    ) ) ) ) }
+
+  }
+
+  links> protected_receives ;
+  protected_receives = fun : ([Int]) -> (Comp(a,{Receive:Int, Fail:Zero |e})) -> Comp(Maybe(a), {Receive{_}, Fail:Zero |e})
+
+  links> solve_too_big( protected_receives ([21,21,21]) ( two ))) () ;
+  (big = false, val = Just(Just(42))) : Sized (Maybe (Int))
+
+  links> solve_too_big( protected_receives ([42,42,42]) ( two ))) () ;
+  (big = true, val = Nothing) : Sized (Maybe (Int))
+\end{lstlisting}
+
+We can declare a protected version of !receives! that guaranties that other !Fail! effects will not interfere. When a ``too big'' number is encountered, the !Fail! effect raised can go through !protected_receives!, reach !solve_too_big!  and be correctly handled. The !big! field is set to !true!.
+
 \paragraph{Remaining issues}
 There is one issue remaining. The effect aliases being inlined before type-checking, we can get a label going out of scope. This will be identified by the typechecker and will raise a !local label ... is not bound error!. It seems that the effectname has escaped the scope.
 \begin{lstlisting}
@@ -762,7 +825,7 @@ Briefly, here is how the code works. All labels in the code can be either global
 \end{rem}
 
 
-\subsection{Polymorphic Operations}
+\subsection{Polymorphic operations}
 \label{sec:poly-op}
 
 My last contribution was to implement the support for polymorphic operations in Links. Until then, only handlers could be polymorphic but not the operations themselves. However this could be useful in a lot of situations. For instance, when writing exceptions, one would want to have a polymorphic !Fail! operation so that it could be used in any location. Without actual polymorphism this could be simulated with a Zero type and its destructor as we've done in previous examples.
@@ -799,7 +862,7 @@ To make an operation polymorphic, the handler should be annotated with a polymor
 
 TODO
 
-\section{Acknowledgement}
+\section*{Acknowledgement}
 \label{sec:acknowledgement}
 
 TODO
@@ -912,7 +975,7 @@ For better handler composability, we write handlers that take a computation and 
   handler''( handler'( handler( f ) ) ) ()
 \end{lstlisting}
 
-\section{Typing Rules}
+\section{Typing rules}
 \label{sec:typing-rules}
 
 We give extra typing rules for shallow and parameterised handlers.

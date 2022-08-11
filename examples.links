@@ -88,70 +88,60 @@ fun ex () {
 
 ## pollution ex
 
-
-typename Maybint = Maybe(Int) ;
-
-sig safe_sqrt : ( Comp(a, {Fail:Zero, Sqrt:(Float)=>Float| e}) ) -> Comp(a , {Fail:Zero, Sqrt{_} | e})
-fun safe_sqrt (m) () {
-    handle (m())  {
-        case <Sqrt(x) => r> -> r (if (x<0.0) absurd(do Fail) else sqrt(x))
+sig receives : ([Int]) -> ( Comp(a, {Fail:Zero, Receive:Int |e}) ) -> Comp(a , {Fail:Zero, Receive{_}|e})
+fun receives (ss) (h) () {
+    handle (h()) (ss<-ss) {
+        case <Receive => r> -> switch (ss) {
+            case [] -> absurd(do Fail)
+            case h::t -> r (h,t)
+        }
+        case x -> x
     }
 }
 
-  sig maybe_sqrt : ( Comp(a, {Fail:Zero, Sqrt:(Float)=>Float| e}) ) -> Comp(Maybe(a) , {Fail{_}, Sqrt{_} | e})
-  fun maybe_sqrt (m) {
-    maybe ( safe_sqrt( m ) )
-  }
+fun not_too_big () {
+    var x = do Receive ;
+    if (x >= 42)
+       absurd(do Fail)
+    else x
+}
 
-  fun schrink (x) {
-    var y = do Sqrt(x) ;
-    if (y < x)
-      y
-    else
-      absurd(do Fail)
-  }
+typename Sized(a) = (val:Maybe(a), big:Bool) ;
 
-  fun end (m) () {
-    handle (m()) {
-      case x -> [x]
-      case <Fail> -> []
+sig solve_too_big : ( Comp(a, {Fail:Zero |e}) ) -> Comp(Sized(a), {Fail{_}|e})
+fun solve_too_big (h) () {
+    handle (h()) {
+        case <Fail> -> (val=Nothing, big=true)
+        case x      -> (val=Just(x), big=false)
     }
-  }
+}
 
-  fun f () {
-      end ( maybe_sqrt ( fun () { schrink(1.2) +. schrink( -.1.0 ) } ) ) ()
-  }
-
-  fun g () {
-      end ( maybe_sqrt ( fun () { schrink(1.2) +. schrink(0.3) } ) ) ()
-  }
-
-# effectname FR(s,e::Eff) = {| F({| R({| e }) }) } ;
-# effectname NAR(s,e::Eff) = { Fail- | R({| e }) } ;
-
-#     sig withtwo21s : ( () ~NAR(Int,{ |e})~> a ) -> Comp(Maybe(a), {Receive{_}, `Abort{_}|e})
-#     fun withtwo21s (h) () { maybe( receives( h:( () ~AR(Int,{ |e})~> a ) <- ( () ~NAR(Int,{ |e})~> a) ) ([21,21]) ) () }
-
-# }
+fun two   () { not_too_big () + not_too_big () }
 
 
-# typename CRI(e::Eff) = Comp(Int, { |R(Int,{ |e})}) ;
+## solving pollution
 
-# sig f : CRI({ |e}) fun f () { do Receive + do Receive }
-# sig g : CRI({ |e}) fun g () { do Receive + do Receive + do Receive }
+fresh `Fail {
 
-# fun h () { if (do Receive < 42) {switch (do Abort) {}} else 0 }
+    sig protect : (Comp(a, {`Fail:Zero, Fail:Zero | e})) -> Comp(a, {Fail{_}, `Fail:Zero|e})
+    fun protect (m) () {
+        handle (m()) {
+            case <Fail => k>-> k (do `Fail)
+        }
+    }
 
-# sig res : ( Comp(Maybint, {Abort:Zero |e}) ) -> Comp(Maybint, {Abort{_}|e})
-# fun res (h) () {
-#     handle(h()) {
-#         case Abort(_)  -> Just(-1)
-#     }
-# }
+    sig unprotect : (Comp(a, {`Fail:Zero, Fail:Zero | e})) -> Comp(a, {`Fail{_}, Fail:Zero|e})
+    fun unprotect (m) () {
+        handle (m()) {
+            case <`Fail => k> -> k (do Fail)
+        }
+    }
 
+    typename CNonLoc(a,e::Eff) = Comp(a, {Receive:Int, Fail:Zero, `Fail-    |e}) ;
+    typename CLoc(a,e::Eff)    = Comp(a, {Receive:Int, Fail:Zero, `Fail:Zero|e}) ;
 
-# (
-#     withtwo21s( f ) () ,
-#     withtwo21s( g ) () ,
-#     res(withtwo21s(h)) ()
-# )
+    sig protected_receives : ([Int]) -> (CNonLoc(a,{ |e})) -> Comp(Maybe(a), {Receive{_}, Fail:Zero, `Fail{_} |e})
+    fun protected_receives (xs) (h) { unprotect ( maybe( receives ([xs]) ( protect ( h : CLoc(a,{ |e}) <- (CNonLoc(a,{ |e}))
+    ) ) ) ) }
+
+}

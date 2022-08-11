@@ -33,8 +33,10 @@ t :
 
 savepdf : $(pdfdir) $(src).pdf
 	cp $(src).pdf $(pdfdir)/$(src).pdf
-	git add -f $(pdfdir)/$(src).pdf
+	git commit $(pdfdir)/$(src).pdf
 	sudo git push
+
+# git add -f $(pdfdir)/$(src).pdf
 
 preambule :
 	cp -r $(pathorigin)/preambule/ preambule
