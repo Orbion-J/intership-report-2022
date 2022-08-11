@@ -478,27 +478,41 @@ The typing judgment has to take into account the current allowed effects. We gat
   The context contains two parts $\Gamma$ and $\Delta$. $\Gamma = x : A ; \dots$ contains typed term variables and $\Delta = \alpha :: K; \dots$ kinded type variables.
 \end{rem}
 
-We give below the main typing rules that allow to understand how effect handlers should be typed. The other rules are the obvious ones and can be found in appendix \ref{sec:typing-rules}. For the sake of clarity, shallow and parameterised handlers rules have also been moved to the appendix.
+We give below the main typing rules that allow to understand how effect handlers should be typed. The other rules are the obvious ones and are not mentioned. For the sake of clarity, shallow and parameterised handlers rules have also been moved to the appendix \ref{sec:typing-rules}.
 
-\begin{prooftree}
-  \AxiomC{$\Delta;\Gamma \vdash p : B / R$}
-  \AxiomC{$R = l : B \To A ; R'$}
-  \RightLabel{$Op$}
-  \BinaryInfC{$\Delta;\Gamma \vdash do\ l(p) : A / R$}
-\end{prooftree}
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{cc}
+    \AxiomC{$\Delta;\Gamma \vdash p : B / R$}
+    \AxiomC{$R = l : B \To A ; R'$}
+    \RightLabel{$Op$}
+    \BinaryInfC{$\Delta;\Gamma \vdash do\ l(p) : A / R$}
+    \DisplayProof
+    &
+      \AxiomC{$\Delta;\Gamma \vdash f : B \to_{R} A / R$}
+      \AxiomC{$\Delta;\Gamma \vdash t : B / R$}
+      \RightLabel{$App$}
+      \BinaryInfC{$\Delta;\Gamma \vdash f t : A / R$}
+      \DisplayProof
+     \end{tabular}
+\end{table}
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{ccc}
 
-\begin{prooftree}
-  \AxiomC{$\Delta;\Gamma \vdash f : B \to_{R} A / R$}
-  \AxiomC{$\Delta;\Gamma \vdash t : B / R$}
-  \RightLabel{$App$}
-  \BinaryInfC{$\Delta;\Gamma \vdash f t : A / R$}
-\end{prooftree}
-
-\begin{prooftree}
-  \AxiomC{$\Delta;\Gamma, x:B \vdash e : A / R$}
-  \RightLabel{$Fun$}
-  \UnaryInfC{$\Delta;\Gamma \vdash fun (x) \{ e \} : B \to_{R} A / R$}
-\end{prooftree}
+    \AxiomC{$\Delta;\Gamma, x:B \vdash e : A / R$}
+    \RightLabel{$Fun$}
+    \UnaryInfC{$\Delta;\Gamma \vdash fun (x) \{ e \} : B \to_{R} A / R$}
+    \DisplayProof
+    &
+      \AxiomC{$\Delta;\Gamma \vdash e : A / R$}
+      \AxiomC{$R \subseteq R'$}
+      \RightLabel{$WeakEff$}
+      \BinaryInfC{$\Delta;\Gamma \vdash e : A / R'$}
+      \DisplayProof
+    \\
+  \end{tabular}
+\end{table}
 
 \begin{prooftree}
   \AxiomC{$\Delta;\Gamma \vdash m : B / R'$}
@@ -509,13 +523,6 @@ We give below the main typing rules that allow to understand how effect handlers
   \BinaryInfC{$\Delta;\Gamma, p_{i}:B_{i}, r_{i}:A_{i} \to_{R} A \vdash n_{i} : A / R$}
   \RightLabel{$Handle$}
   \TrinaryInfC{$\Delta;\Gamma \vdash handle (m) \{ case\ x \mapsto n\ case \langle l_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : A / R$}
-\end{prooftree}
-
-\begin{prooftree}
-  \AxiomC{$\Delta;\Gamma \vdash e : A / R$}
-  \AxiomC{$R \subseteq R'$}
-  \RightLabel{$WeakEff$}
-  \BinaryInfC{$\Delta;\Gamma \vdash e : A / R'$}
 \end{prooftree}
 
 where $R \subseteq R'$ is defined by
@@ -544,7 +551,7 @@ where $R \subseteq R'$ is defined by
   \end{tabular}
 \end{table}
 
-Rule $Op$ states that invoking an operation requires a ambient effect row that contains it with the correct types. Rule $App$ ensure that, when applying a function, its effect row is compatible with the ambient one. The $Handle$ rule types a !handle! construct. The important thing to notice is that the row used to type $m$ obviously contains the operations $l_{i}$ handled and that after handling, all $l_{i}$s have been removed from the row. The last rule mentioned here ensures that the ambient effect row mentions effects that are \emph{allowed} to be performed but not necessary since an effect can be added to the row.
+Rule $Op$ states that invoking an operation requires a ambient effect row that contains it with the correct types. Rule $App$ ensure that, when applying a function, its effect row is compatible with the ambient one. The $Handle$ rule types a !handle! construct. The important thing to notice is that the row used to type $m$ obviously contains the operations $l_{i}$ handled and that after handling, all $l_{i}$s have been removed from the row. Finally $WeakEff$ ensures that the ambient effect row mentions effects that are \emph{allowed} to be performed but not necessary since an effect can be added to the row.
 
 We say that an expression $e$ type-checks only if no unhandled effects are allowed : $\Delta;\Gamma \vdash e : T / \bullet$, noted $\Delta;\Gamma \vdash e : T$.
 
@@ -860,16 +867,18 @@ To make an operation polymorphic, the handler should be annotated with a polymor
 \section{Conclusion}
 \label{sec:conclusion}
 
-TODO
+In this internship, I have discovered a new programming language, Links, and a new feature, effect handlers. I learnt how they work and I tried to make a contribution.
 
-\section*{Acknowledgement}
+I have incorporated in Links useful and interesting features but they are far from perfect and each of them could and will be improved in future versions of Links. For instance, type and effect aliases could be generalised and the kinding system might need some improvements for this. One may also want to go towards first class labels. I provided a way of creating new instances of labels but this could be extended even if this raises a huge amount of new issues. The way we achieve polymorphic operations is a bit constraining because the annotations have to be at the level of cases. Using some sort of bidirectionality, one may hope to avoid this and allow the programmer to only write polymorphic types in the signature of the handler for instance.
+
+This internship allowed me to face many challenges related to code development such as working with a large codebase, understanding not-so-much-commented code, dealing with git. It is really satisfying to see that the code I wrote is now running and will be running in the official Links code.
+
+In the end, I am really glad to have been able to have this experience and that my work could be, at least a little, useful to research.
+
+\paragraph{Acknowledgements}
 \label{sec:acknowledgement}
 
-TODO
-
-
-
-
+I would like to thank the team that welcomed me in Edinburgh, that is of course Sam and Daniel my supervisors but also all the members of the PL group. I also would like to thank my fellow interns Nachi, Yi and Pierre and my flatmates Aleks, Iris and Misha that had to put up with me during these few months in Edinburgh.
 
 
 
@@ -910,7 +919,10 @@ The pull requests that I opened are available here \cite{gh:prs}.
 
 The Links repository can be found at \cite{gh:links}. Set up and installation instructions are available on Links website \cite{links-org} or you can built in from source using the Makefile provided in the repository. After having installed the dependencies with !$ opam install --deps-only links!, a simple !$ make! should be sufficient.
 
-To replicate the examples in this paper, use preferably the branches of my fork... TODO WHEN RELEASE !!
+To replicate the examples in this paper, use preferably the branches of my fork. The changes will be step by step included in Links and in new releases.
+
+% TODO WHEN RELEASE !!
+% TODO a branch with local + poly handlers
 
 \section{Links technicalities}
 \label{sec:tech}
