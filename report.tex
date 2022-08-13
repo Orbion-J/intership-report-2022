@@ -1,4 +1,4 @@
-\documentclass[10pt, nonacm=true, language=french, language=english]{acmart}
+\documentclass[11pt, nonacm=true, language=french, language=english]{acmart}
 
 \input{./preambule/preambule.tex}
 \usepackage{listings}
@@ -112,9 +112,9 @@ Links \citep{links} is a tierless functional programming language for the web de
   \item the client side in JavaScript and HTML/CSS
   \item the database queries in SQL
 \end{itemize}
-This is neither elegant nor really practical and prevents easy binding between different parts of the program that need to communicate data. It can cause \emph{impedance mismatch}, ie situations where the objects required by the server do not match what the database provide and vice versa.
+This is neither elegant nor really practical and prevents easy binding between different parts of the program that need to exchange data. It can cause \emph{impedance mismatch}, ie situations where the objects required by the server do not match what the database provides and vice versa.
 
-Links avoids these by providing the programmer one single language for each tier (HTML/CSS are still needed) that is compiled into bytecode for the server, JavaScript for the client and SQL for the queries.
+Links avoids these by providing the programmer one single language for all tiers (HTML/CSS are still needed) that is compiled into bytecode for the server, JavaScript for the client and SQL for the queries.
 
 Links also supports numerous useful features including
 \begin{itemize}
@@ -150,7 +150,7 @@ Gordon Plotkin and Matija Pretnar \citep{plotkin-pretnar} introduced a construct
 
 Effect handlers can be seen as a generalisation of exception handlers. One can perform an effect in the same way as one could raise an exception and this will transfer the flow control to a handler. It is given the delimited continuation between the point where the effect is performed and where it is handled and can use it
 \begin{description}
-  \item[0 times] and act as an exception handler
+  \item[0 time] and act as an exception handler
   \item[once] (linear handler)
   \item[twice or more] (non-linear handler) to simulate a choice for instance
 \end{description}
@@ -185,10 +185,7 @@ The type system keeps track of what effects can be performed. A function from ty
 
 \subsection{Examples}
 
-\subsubsection{A first exception handler}
-\label{sec:first-except-handl}
-
-~
+\begin{ex}[A first exception handler] \
 
 \begin{lstlisting}[caption=Fail invocation]
   sig assert_positive : (Int) {Fail:() => Zero|_}-> Int
@@ -201,21 +198,21 @@ This first example shows a function !assert_positive! that takes an integer and 
 
 \begin{lstlisting}[caption=maybe handler, label=lst:mb-h]
   sig maybe : (() {Fail:() => Zero|e}~> a) -> () {Fail{_}|e}~> Maybe(a)
-  fun maybe(m) () {
-    handle(m()) {
+  fun maybe (m) () {
+    handle (m()) {
       case <Fail> -> Nothing
       case x -> Just(x)
     }
   }
 \end{lstlisting}
 
-This operation can be handled by handler \ref{lst:mb-h}. This is actually an exception handler since the resumption is not used in the right hand side (and thus can be omitted in the left hand side). The \emph{effect signature} is !{Fail: () => Zero}!, that means there is only one operation called !Fail! that will be handled.
+This operation can be handled by the !maybe! handler presented in listing \ref{lst:mb-h}. This is actually an exception handler since the resumption is not used in the right hand side (and thus can be omitted in the left hand side). The \emph{effect signature} is !{Fail: () => Zero}!, that means there is only one operation called !Fail! that will be handled.
 
 When the operation !Fail! is invoked, the handler directly returns a value, here !Nothing!. When the computation returns a value, the handler will return that value, embedded in the !Maybe! type (on !Maybe! type, see \ref{sec:tech:maybe}).
 
-The function !maybe! will take a computation that can perform the effect !{Fail: () => Zero|e}! ie the operation !Fail! and possibly other effects, captured by the row variable !e!, and returns something of type !a!. It will execute this computation, performing effects from !e! that should be handled by another handler at some point. In the end, it returns a value of type !Maybe(a)!.
+The function !maybe! will take a computation that can perform the effect !{Fail: () => Zero|e}! ie the operation !Fail! and possibly other effects captured by the row variable !e! and will return something of type !a!. It will execute this computation, performing effects from !e! that should be handled by another handler at some point. In the end, it returns a value of type !Maybe(a)!.
 
-The !Fail{_}! in the effect row indicates a polymorphic presence for the operation. Roughly it means that the operation can or cannot be present after. This is needed since the effect type system enforces that all operations in a row are distinct. !Fail! cannot belong to !e! because of the effect row of the input computation.
+The !Fail{_}! in the effect row indicates a polymorphic presence for the operation. Roughly it means that the operation can or cannot be present after. This is needed since the effect type system enforces that all operations in a row are distinct. !Fail! cannot belong to !e! because of the effect row of the input computation. See section \ref{sec:links-typ} for more details on presence.
 
 \begin{lstlisting}
   sig h2g2 : () {Fail:() => Zero|_}-> Int
@@ -237,10 +234,11 @@ We can then use the !maybe! function to handle the failures in functions !h2g2! 
   Nothing : Maybe (Int)
 \end{lstlisting}
 
+\end{ex}
 
-\subsubsection{Drunk coin tossing}
+\begin{ex}[Drunk coin tossing]
 
-We consider now a new operation !Choose! that can produce a boolean and use it to simulate a drunk coin toss. The drunk tosses the coin and either let it fall or catch it and see heads or tail.
+We consider now a new operation !Choose! that can produce a boolean and use it to simulate a drunk coin toss. A drunk tosses a coin and either let it fall or catch it and see heads or tail.
 
 \begin{lstlisting}[caption=Drunk toss]
   typename Toss = [| Heads | Tail |] ;
@@ -310,6 +308,7 @@ In the third case, !h_all! imposes that all possibilities are explored so at som
 
 The last case is the most complicated one. The failures are catch by !maybe! \emph{under} !h_all!. That means !h_all! won't see failures and will take each result, whether it is a !Nothing! or a list of heads/tail and form its big list of all possibilities.
 
+\end{ex}
 
 \subsection{Semantics}
 \label{sec:semantics}
@@ -334,7 +333,7 @@ and $\mathcal E$ is an evaluation context : $\mathcal E ::= [] \mid !handle ( !\
 
 $Op \in \mathcal E$ means there is a handler for $Op$ in $\mathcal E$.
 
-If there is a value $v$ inside the handler, we call the return case $N$ with !x! bound to $v$. When the handler is the most inner one that can handle the operation $Op_{i}$ invoke with some payload $v$, what is insured by $Op_{i}\notin \mathcal E$, we bind the payload and build the resumption before calling the case $N_{i}$.
+If there is a value $v$ inside the handler, we call the return case $N$ with !x! bound to $v$. When the handler is the most inner one that can handle the operation $Op_{i}$ invoked with some payload $v$, what is insured by $Op_{i}\notin \mathcal E$, we bind the payload and build the resumption before calling the case $N_{i}$.
 
 The resumption is embedded in the current handler since operation $Op_{i}$ could be invoked in the rest of the evaluation context $\mathcal E$. This is called a \emph{deep} handler.
 
@@ -350,7 +349,7 @@ Links also support \emph{shallow} handlers, ie handlers that do not automaticall
 
 Another useful feature of handlers is that they could be parameterised. The programmer can give the handler a parameter that is carried along the computation.
 
-\begin{lstlisting}[caption=Example of parameterised handler]
+\begin{lstlisting}[caption=Example of parameterised handler for a state effect]
   sig h_state : (a) -> (Comp(b,{ Get:()=>a, Put:(a)=>() | e })) ~> Comp((b,a), { Get{_}, Put{_} | e })
   fun h_state (init) (m) () {
     handle (m()) (s <- init) {
@@ -388,14 +387,14 @@ Here are the reduction rules for parameterised handlers
 \]
 
 \begin{rem}
-  A parameterised has to be deep since the parameter needs a handler to carry it.
+  A parameterised handler has to be deep since the parameter needs a handler to carry it.
 \end{rem}
 
 \paragraph{Relationships between handlers}
 
 Those three kinds of handlers are equivalent in the sense that it is possible to express each of them using one other.
 
-If it is easy to see how to express a deep handler from a parameterised handler or from a shallow handler, the converse is not so obvious. See \citep{ehgc}, section 4 or \citep{daniel-thesis}, section 6.
+If it is easy to see how to express a deep handler from a parameterised handler or from a shallow handler, the converse is not so obvious. In \citep{ehgc}, section 4 or \citep{daniel-thesis}, section 6 are presented some ways of doing that.
 
 \section{Typing}
 \label{sec:typing}
@@ -405,7 +404,7 @@ Links is a strongly statically typed language. In this section, we describe some
 \subsection{Rows}
 \label{sec:row-typ}
 
-In order to type effects, we store in function types the effects that are \emph{allowed} to be perform during the execution of that function. To do so we use rows. They are an unordered and labeled data and type structure. They are also used in others features of Links as records and variants.
+In order to type effects, we store in function types the effects that are \emph{allowed} to be performed during the execution of that function. To do so we use rows, an unordered and labeled data and type structure. They are also used in others features of Links as records and variants.
 
 In the most general setting, a row is defined by
 \[
@@ -415,9 +414,9 @@ where $\rho$ is a row variable, $l$ is a label and $\delta$ is a data. $\bullet$
 
 A row is said to be \emph{open} if it ends with a row variable and \emph{closed} if it ends with the empty row.
 
-For actual records, the data are actual values of the language but in the typing setting (typing effects, records and variants), $\delta$ will be a presence (see \ref{sec:links-typ}).
+For concrete records, the data are actual values of the language but in the typing setting (typing effects, records and variants), $\delta$ will be a presence (see \ref{sec:links-typ}).
 
-We require also that in one row, labels are all distinct and we consider row equal up to reordering of pairs labels/data.
+We require also that in one row, labels are all distinct and we consider rows equal up to reordering of pairs labels/data.
 
 \begin{ex}
   $Fail:Zero; Choose:Bool; \bullet$ is a valid row and is equal to $Choose:Bool; Fail:Zero; \bullet$ but $Fail:Zero; Fail:Int; e$ and $Fail:Zero; Fail:Zero; e$ are not valid. In the open row $Choose:Bool; e$, $e$ could not be substituted by anything with label $Choose$.
@@ -551,7 +550,7 @@ where $R \subseteq R'$ is defined by
   \end{tabular}
 \end{table}
 
-Rule $Op$ states that invoking an operation requires a ambient effect row that contains it with the correct types. Rule $App$ ensure that, when applying a function, its effect row is compatible with the ambient one. The $Handle$ rule types a !handle! construct. The important thing to notice is that the row used to type $m$ obviously contains the operations $l_{i}$ handled and that after handling, all $l_{i}$s have been removed from the row. Finally $WeakEff$ ensures that the ambient effect row mentions effects that are \emph{allowed} to be performed but not necessary since an effect can be added to the row.
+Rule $Op$ states that invoking an operation requires a ambient effect row that contains it with the correct types. Rule $App$ ensures that, when applying a function, its effect row is compatible with the ambient one. The $Handle$ rule types a !handle! construct. The important thing to notice is that the row used to type $m$ obviously contains the operations $l_{i}$ handled and that after handling, all $l_{i}$s have been removed from the row. Finally $WeakEff$ ensures that the ambient effect row mentions effects that are \emph{allowed} to be performed but not necessary since an effect can be added to the row.
 
 We say that an expression $e$ type-checks only if no unhandled effects are allowed : $\Delta;\Gamma \vdash e : T / \bullet$, noted $\Delta;\Gamma \vdash e : T$.
 
@@ -568,7 +567,7 @@ See \citep{links-effect} for the proof.
 
 \subsection{Polymorphism}
 
-Links supports a System F \cite{proof-type-girard} style polymorphism. Types can contains kinded variables $\alpha$ that can be abstracted over with a $\forall \alpha :: K$. A polymorphic type can be instantiated with a type application.
+Links supports a System F \cite{proof-type-girard} style polymorphism. Types can contain kinded variables $\alpha$ that can be abstracted over with a $\forall \alpha :: K$. A polymorphic type can be instantiated with a type application.
 
 For more details on Links polymorphism, one could look at \cite{polymorph-rpc-links}.
 
@@ -576,7 +575,7 @@ For more details on Links polymorphism, one could look at \cite{polymorph-rpc-li
 \section{Contributions}
 \label{sec:contribution}
 
-During my internship I added some new features to Links that have been merged into the 0.0.0 release.
+During my internship I added some new features that have been or will soon be merged into Links.
 
 \subsection{Effect aliases}
 
@@ -592,7 +591,7 @@ In Links we can define type aliases using the keyword !typename!.
   typename Comp(a, e::Row) = () ~e~> a ;
 \end{lstlisting}
 
-But until now, there was no way to define such thing for effects. This is really usefull since when working with effects, the same set of effects show up everywhere.
+But until now, there was no way to define such thing for effects. This is really usefull since when working with effects, the same set of effects shows up everywhere.
 
 Using the new keyword !effectname! we can now write an alias for an effect row :
 \begin{lstlisting}
@@ -607,7 +606,7 @@ To use it in a signature or in another type or effect alias just apply it with t
 
 However, due to lack of kind inference, row variables and aliases have to be used carefully so that Links does not think they are of kind type. We need to write them most of the time between braces !{ | ... }!. For instance, if there is !effectname E(a::Eff) = {X : ... | a }! and a row variable !e::Eff!, you will have to write !E({ |e})!, and similarly for another effect alias instead of the variable. This makes the usage of several nested aliases a bit messy, it would be nice if it could be avoided.
 
-Recursive effect aliases are not available for now. The aliases are replaced by the row they correspond to, aliases are not kept are not printed out.
+Recursive effect aliases are not available for now. The aliases are replaced by the row they correspond to. Aliases are not kept and thus cannot be printed out.
 
 The implementation is mostly inspired by what is done for type aliases.
 
@@ -627,12 +626,12 @@ We first introduce a problem that arises when playing with numerous effects and 
         case [] -> absurd(do Fail)
         case h::t -> r (h,t)
       }
-    case x -> x
+      case x -> x
     }
   }
 \end{lstlisting}
 
-Let !receives! be a (parameterised) handler for the operation !Receive! that provides an integer. This handler will give the integers from a list that it has been given. When the end of the list is reached, an error is raised.
+Let !receives! be a (parameterised) handler for the operation !Receive! that provides an integer. This handler will read the integers from a list that it has been given. When the end of the list is reached, an error is raised.
 
 \begin{lstlisting}
   fun not_too_big () {
@@ -655,7 +654,7 @@ Let !receives! be a (parameterised) handler for the operation !Receive! that pro
 
 Let us imagine another piece of code that uses this effect !Receive! but does not want too big numbers. When something too big is given, a failure is raised and then catch by a handler that will keep track of it.
 
-What happen if we want to have these work together ?
+What happen if we want to have these to work together ?
 
 \begin{lstlisting}
   fun two () { not_too_big () + not_too_big () }
@@ -667,9 +666,9 @@ What happen if we want to have these work together ?
   (big = false, val = Just(Nothing)) : Sized (Maybe (Int))
 \end{lstlisting}
 
-If we compose handlers the way above, we see that 666 is too big but the !big! value is set to false. The !Fail! raised by !not_too_big! has been catch by !maybe!. The shared !Fail! effects interfere and are mixed up. This is what we call \emph{effect pollution}.
+If we compose handlers the way above, we see that 42 is too big but the !big! value is set to false. The !Fail! raised by !not_too_big! has been catch by !maybe!. The shared !Fail! effects interfere and are mixed up. This is what we call \emph{effect pollution}.
 
-That kind of effect pollution could become really annoying when one works with a large amount of code and numerous effects and handlers and it reduces modularity.
+That kind of effect pollution could become really annoying when one works with a large amount of code and numerous effects and handlers. It also reduces modularity.
 
 \subsubsection{State of the art}
 \label{sec:state-art}
@@ -747,10 +746,12 @@ The two first rules state that absent or polymorphic instances of the label can 
 \begin{thm}
   For any label $l$ and type $T$, exactly one of the following holds
   \begin{itemize}
-    \item either there exists a unique $T'$ such that $T\uparrow_{l}T'$. we write $e(T) = T'$
+    \item either there exists a unique $T'$ such that $T\uparrow_{l}T'$. We write $e(T) = T'$
     \item or $T\downarrow_{l}$
   \end{itemize}
 \end{thm}
+
+The proof is by induction on types.
 
 At the end of the scope, for each declaration, we type it and get its type $T$. If $e(T)$ exists, we replace its type by $e(T)$ in the context. Otherwise, we remove the object from the context.
 Thus, local labels cannot escape.
@@ -825,7 +826,7 @@ There is one issue remaining. The effect aliases being inlined before type-check
 This is not really satisfying but should be fixed by improving effect aliases and giving them the same behavior as type aliases. Furthermore, this could not cause code that should not type-check to type-check since it is catch.
 
 \paragraph{Implementation}
-Briefly, here is how the code works. All labels in the code can be either global or local, have a name and the local ones have a unique id. Labels with a backtick are parsed into free local label and normal label are parsed into global ones. During desugaring, a newpass binds the local labels. During type-checking, when a !fresh ... { ... }! binding is encountered, we add the labels into the context and typecheck each declaration in the scope. Before that, the context should be clean from any label that will be shadowed by the fresh declaration (labels that have the same name). When leaving the scope, we clean the context from the local labels to avoid them to escape the scope. Moreover we check during typechecking if types do not contain unbound or shadowed labels.
+All labels in the code can be either global or local, have a name and the local ones have a unique id. Labels with a backtick are parsed into free local label and normal label are parsed into global ones. During desugaring, a newpass binds the local labels. During type-checking, when a !fresh ... { ... }! binding is encountered, we add the labels into the context and typecheck each declaration in the scope. Before that, the context should be clean from any label that will be shadowed by the fresh declaration (labels that have the same name). When leaving the scope, we clean the context from the local labels to avoid them to escape the scope. Moreover we check during typechecking if types do not contain unbound or shadowed labels.
 
 \begin{rem}
   For now if all labels are internally of the same type and then can be local or global, the parser only accepts local labels in effect related things. If needed, this could be a way of improvement.
@@ -835,7 +836,7 @@ Briefly, here is how the code works. All labels in the code can be either global
 \subsection{Polymorphic operations}
 \label{sec:poly-op}
 
-My last contribution was to implement the support for polymorphic operations in Links. Until then, only handlers could be polymorphic but not the operations themselves. However this could be useful in a lot of situations. For instance, when writing exceptions, one would want to have a polymorphic !Fail! operation so that it could be used in any location. Without actual polymorphism this could be simulated with a Zero type and its destructor as we've done in previous examples.
+My last contribution was to implement the support for polymorphic operations in Links. Until then, only handlers could be polymorphic but not the operations themselves. However this could be useful in a lot of situations. For instance, when writing exceptions, one would want to have a polymorphic !Fail! operation so that it could be used in any location. Without actual polymorphism this could be simulated with a Zero type and its destructor as we have done in previous examples.
 
 This is easily added since polymorphism is already incorporated in Links. The only thing to add is to allow operations to be of the form $\forall \alpha ::K. \dots$ and not only fat arrow types.
 
@@ -869,11 +870,11 @@ To make an operation polymorphic, the handler should be annotated with a polymor
 
 In this internship, I have discovered a new programming language, Links, and a new feature, effect handlers. I learnt how they work and I tried to make a contribution.
 
-I have incorporated in Links useful and interesting features but they are far from perfect and each of them could and will be improved in future versions of Links. For instance, type and effect aliases could be generalised and the kinding system might need some improvements for this. One may also want to go towards first class labels. I provided a way of creating new instances of labels but this could be extended even if this raises a huge amount of new issues. The way we achieve polymorphic operations is a bit constraining because the annotations have to be at the level of cases. Using some sort of bidirectionality, one may hope to avoid this and allow the programmer to only write polymorphic types in the signature of the handler for instance.
+I have incorporated in Links useful and interesting features even if they are far from perfect and each of them could and will be improved in future versions of Links. For instance, type and effect aliases could be generalised and the kinding system might need some improvements for this. One may also want to go towards first class labels. I provided a way of creating new instances of labels but this could be extended. This still raises a huge amount of new issues. The way we achieve polymorphic operations is a bit constraining because the annotations have to be at the level of cases. Using some sort of bidirectionality, one may hope to avoid this and allow the programmer to only write polymorphic types in the signature of the handler for instance.
 
-This internship allowed me to face many challenges related to code development such as working with a large codebase, understanding not-so-much-commented code, dealing with git. It is really satisfying to see that the code I wrote is now running and will be running in the official Links code.
+This internship allowed me to face many challenges related to code development such as working with a large codebase, understanding not-so-much-commented code and dealing with git. It is really satisfying to see that the code I wrote is now running and will be running in the official Links code.
 
-In the end, I am really glad to have been able to have this experience and that my work could be, at least a little, useful to research.
+In the end, I am really glad that I have been able to have this experience and that my work could be, at least a little, useful to research.
 
 \paragraph{Acknowledgements}
 \label{sec:acknowledgement}
