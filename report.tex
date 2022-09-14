@@ -129,7 +129,7 @@ It is used as an experimental language by researchers to try out new ideas and w
 Links is strict, statically typed and use a Hindley-Milner type system as well as a Rémy style row typing system \ref{sec:row-typ} \citep{row-typ}. Its syntax is inspired from JavaScript and ML. Its compiler \citep{gh:links} is written in OCaml.
 
 \begin{rem}
-  In appendix \ref{sec:tech}, the reader could find some technical points on Links syntax and semantics that are not worth it to develop here. He is invited to look at it whenever needed.
+  In appendix \ref{sec:tech}, the reader could find some technical points on Links syntax and semantics that are not worth developing here. They are invited to look at it whenever needed.
 \end{rem}
 
 \section{Effect handlers}
@@ -399,12 +399,12 @@ If it is easy to see how to express a deep handler from a parameterised handler 
 \section{Typing}
 \label{sec:typing}
 
-Links is a strongly statically typed language. In this section, we describe some main features of Links type system that allow us to type effect handlers.
+Links is a strongly statically typed language. In this section, we describe some main features of the Links type system that allow us to type effect handlers.
 
 \subsection{Rows}
 \label{sec:row-typ}
 
-In order to type effects, we store in function types the effects that are \emph{allowed} to be performed during the execution of that function. To do so we use rows, an unordered and labeled data and type structure. They are also used in others features of Links as records and variants.
+In order to type effects, we store in function types the effects that are \emph{allowed} to be performed during the execution of that function. To do so we use rows, an unordered and labeled data and type structure. They are also used in others features of Links such as records and variants.
 
 In the most general setting, a row is defined by
 \[
@@ -419,7 +419,7 @@ For concrete records, the data are actual values of the language but in the typi
 We require also that in one row, labels are all distinct and we consider rows equal up to reordering of pairs labels/data.
 
 \begin{ex}
-  $Fail:Zero; Choose:Bool; \bullet$ is a valid row and is equal to $Choose:Bool; Fail:Zero; \bullet$ but $Fail:Zero; Fail:Int; e$ and $Fail:Zero; Fail:Zero; e$ are not valid. In the open row $Choose:Bool; e$, $e$ could not be substituted by anything with label $Choose$.
+  $Fail:Zero; Choose:Bool; \bullet$ is a valid row and is equal to $Choose:Bool; Fail:Zero; \bullet$ but $Fail:Zero; Fail:Int; R$ and $Fail:Zero; Fail:Zero; R$ are not valid. In the open row $Choose:Bool; R$, $R$ could not be substituted by anything with label $Choose$.
 \end{ex}
 
 
@@ -458,7 +458,7 @@ Below is the type and kind syntax.
 
 We have three different kinds that are usual \emph{types}, \emph{rows} and \emph{presence types}.
 
-Any label that appears into a row is associated with a presence type that indicates if the label is present in this row. If it is, we have to provide a type, otherwise this is not necessary and we just indicate the absence. One may wonder why are presence useful. After all, to know if a label is present into a row, looking at the row should be enough. This is true for closed rows but not for open ones. Writing $l:-;\rho$ implies that the row variable $\rho$ cannot stands for a row containing $l$ since a label cannot appear twice into a row. Absence guaranties that whatever the row variable is substituted with, this label will never occur.
+Any label that appears into a row is associated with a presence type that indicates if the label is present in this row. If it is, we have to provide a type, otherwise this is not necessary and we just indicate the absence. One may wonder why are presence useful. After all, to know if a label is present in a row, looking at the row should be enough. This is true for closed rows but not for open ones. Writing $l:-;\rho$ implies that the row variable $\rho$ cannot stands for a row containing $l$ since a label cannot appear twice in a row. Absence guarantees that whatever the row variable is substituted with, this label will never occur.
 
 \begin{rem}
   In \emph{closed} rows, absence is redundant :
@@ -471,21 +471,20 @@ In Links, we write effect rows between braces !{ ... }!. For a label !A!, the ab
 \subsection{Typing handlers}
 \label{sec:typing-handlers}
 
-The typing judgment has to take into account the current allowed effects. We gather them into a row $R$ and we write $\Delta;\Gamma \vdash e : T / R$ for expression $e$ has type $T$ in context $\Delta;\Gamma$ and can perform effects in $R$.
+The typing judgement has to take into account the current allowed effects. We gather them into a row $R$ and we write $\Delta;\Gamma \vdash e : T / R$ for expression $e$ has type $T$ in context $\Delta;\Gamma$ and can perform effects in $R$.
 
 \begin{rem}
   The context contains two parts $\Gamma$ and $\Delta$. $\Gamma = x : A ; \dots$ contains typed term variables and $\Delta = \alpha :: K; \dots$ kinded type variables.
 \end{rem}
 
-We give below the main typing rules that allow to understand how effect handlers should be typed. The other rules are the obvious ones and are not mentioned. For the sake of clarity, shallow and parameterised handlers rules have also been moved to the appendix \ref{sec:typing-rules}.
+We give below the main typing rules that allow us to understand how effect handlers should be typed. The other rules are the obvious ones and are not mentioned. For the sake of clarity, shallow and parameterised handlers rules have also been moved to the appendix \ref{sec:typing-rules}.
 
 \begin{table}[h!]
   \centering
-  \begin{tabular}{cc}
-    \AxiomC{$\Delta;\Gamma \vdash p : B / R$}
-    \AxiomC{$R = l : B \To A ; R'$}
-    \RightLabel{$Op$}
-    \BinaryInfC{$\Delta;\Gamma \vdash do\ l(p) : A / R$}
+  \begin{tabular}{ccc}
+    \AxiomC{$\Delta;\Gamma, x:B \vdash e : A / R$}
+    \RightLabel{$Fun$}
+    \UnaryInfC{$\Delta;\Gamma \vdash fun (x) \{ e \} : B \to_{R} A / R$}
     \DisplayProof
     &
       \AxiomC{$\Delta;\Gamma \vdash f : B \to_{R} A / R$}
@@ -493,64 +492,65 @@ We give below the main typing rules that allow to understand how effect handlers
       \RightLabel{$App$}
       \BinaryInfC{$\Delta;\Gamma \vdash f t : A / R$}
       \DisplayProof
-     \end{tabular}
-\end{table}
-\begin{table}[h!]
-  \centering
-  \begin{tabular}{ccc}
-
-    \AxiomC{$\Delta;\Gamma, x:B \vdash e : A / R$}
-    \RightLabel{$Fun$}
-    \UnaryInfC{$\Delta;\Gamma \vdash fun (x) \{ e \} : B \to_{R} A / R$}
-    \DisplayProof
-    &
-      \AxiomC{$\Delta;\Gamma \vdash e : A / R$}
-      \AxiomC{$R \subseteq R'$}
-      \RightLabel{$WeakEff$}
-      \BinaryInfC{$\Delta;\Gamma \vdash e : A / R'$}
-      \DisplayProof
     \\
   \end{tabular}
 \end{table}
 
 \begin{prooftree}
-  \AxiomC{$\Delta;\Gamma \vdash m : B / R'$}
-  \AxiomC{$\Delta;\Gamma, x:B \vdash n : A / R$}
-  \AxiomC{$R' = l_{i} : B_{i} \To A_{i} ; R_{0}$}
-  \AxiomC{$R = l_{i} : \theta ; R_{0}$}
-  \noLine
-  \BinaryInfC{$\Delta;\Gamma, p_{i}:B_{i}, r_{i}:A_{i} \to_{R} A \vdash n_{i} : A / R$}
-  \RightLabel{$Handle$}
-  \TrinaryInfC{$\Delta;\Gamma \vdash handle (m) \{ case\ x \mapsto n\ case \langle l_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : A / R$}
+  \AxiomC{$\Delta;\Gamma \vdash p : B / R$}
+  \AxiomC{$R = l : B \To A ; R'$}
+  \RightLabel{$Op$}
+  \BinaryInfC{$\Delta;\Gamma \vdash do\ l(p) : A / R$}
 \end{prooftree}
 
-where $R \subseteq R'$ is defined by
-\begin{table}[h!]
-  \centering
-  \begin{tabular}{ccccc}
-    \AxiomC{}
-    \UnaryInfC{$R \subseteq R$}
-    \DisplayProof
-    &
-      \AxiomC{}
-      \UnaryInfC{$R \subseteq \rho$}
-      \DisplayProof
-    &
-      \AxiomC{$R \subseteq R'$}
-      \UnaryInfC{$R \subseteq l:P;R'$}
-      \DisplayProof
-    &
-      \AxiomC{$R \subseteq R'$}
-      \UnaryInfC{$l:P;R \subseteq l:P;R'$}
-      \DisplayProof
-    &
-      \AxiomC{$R \subseteq R'$}
-      \UnaryInfC{$l:\theta;R \subseteq l:P;R'$}
-      \DisplayProof
-  \end{tabular}
-\end{table}
+\begin{prooftree}
+  \AxiomC{$\Delta;\Gamma \vdash m : B / R'$}
+  \AxiomC{$\Delta;\Gamma, x:B \vdash n : A / R$}
+  \AxiomC{$R' = (l_{i} : B_{i} \To A_{i})_{i} ; R_{0}$}
+  \AxiomC{$R = (l_{i} : P_{i})_{i} ; R_{0}$}
+  \noLine
+  \BinaryInfC{$\forall i,\; \Delta;\Gamma, p_{i}:B_{i}, r_{i}:A_{i} \to_{R} A \vdash n_{i} : A / R$}
+  \RightLabel{$Handle$}
+  \TrinaryInfC{$\Delta;\Gamma \vdash handle (m) \{ case\ x \mapsto n\; (case \langle l_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i})_{i}\} : A / R$}
+\end{prooftree}
 
-Rule $Op$ states that invoking an operation requires a ambient effect row that contains it with the correct types. Rule $App$ ensures that, when applying a function, its effect row is compatible with the ambient one. The $Handle$ rule types a !handle! construct. The important thing to notice is that the row used to type $m$ obviously contains the operations $l_{i}$ handled and that after handling, all $l_{i}$s have been removed from the row. Finally $WeakEff$ ensures that the ambient effect row mentions effects that are \emph{allowed} to be performed but not necessary since an effect can be added to the row.
+
+Rule $Op$ states that invoking an operation requires a ambient effect row that contains it with the correct types. Rule $App$ ensures that, when applying a function, its effect row is compatible with the ambient one. The $Handle$ rule types a !handle! construct. The important thing to notice is that the row used to type $m$ obviously contains the operations $l_{i}$ handled and that after handling, all $l_{i}$s have been removed from the row.
+
+\begin{rem}
+  The following rule $WeakEff$ is admissible from the other rules. It ensures that the ambient effect row mentions effects that are \emph{allowed} to be performed but not necessary since an effect can be added to the row.
+  \begin{prooftree}
+    \AxiomC{$\Delta;\Gamma \vdash e : A / R$}
+    \AxiomC{$R \subseteq R'$}
+    \RightLabel{$WeakEff$}
+    \BinaryInfC{$\Delta;\Gamma \vdash e : A / R'$}
+  \end{prooftree}
+  where $R \subseteq R'$ is defined by
+  \begin{table}[h!]
+    \centering
+    \begin{tabular}{ccccc}
+      \AxiomC{}
+      \UnaryInfC{$R \subseteq R$}
+      \DisplayProof
+      &
+        \AxiomC{}
+        \UnaryInfC{$R \subseteq \rho$}
+        \DisplayProof
+      &
+        \AxiomC{$R \subseteq R'$}
+        \UnaryInfC{$R \subseteq l:P;R'$}
+        \DisplayProof
+      &
+        \AxiomC{$R \subseteq R'$}
+        \UnaryInfC{$l:P;R \subseteq l:P;R'$}
+        \DisplayProof
+      &
+        \AxiomC{$R \subseteq R'$}
+        \UnaryInfC{$l:\theta;R \subseteq l:P;R'$}
+        \DisplayProof
+    \end{tabular}
+  \end{table}
+\end{rem}
 
 We say that an expression $e$ type-checks only if no unhandled effects are allowed : $\Delta;\Gamma \vdash e : T / \bullet$, noted $\Delta;\Gamma \vdash e : T$.
 
@@ -591,7 +591,7 @@ In Links we can define type aliases using the keyword !typename!.
   typename Comp(a, e::Row) = () ~e~> a ;
 \end{lstlisting}
 
-But until now, there was no way to define such thing for effects. This is really usefull since when working with effects, the same set of effects shows up everywhere.
+But until now, there was no way to define such thing for effects. This is really useful since when working with effects, the same set of effects shows up everywhere.
 
 Using the new keyword !effectname! we can now write an alias for an effect row :
 \begin{lstlisting}
@@ -716,7 +716,7 @@ We define a new construct !fresh `A { e }!  where !e! is any list of function an
 \paragraph{Going out of scope}
 A function, value or alias that has a local label in its type cannot escape the scope, but we do want to keep some of the declarations made in that scope. When leaving the scope, for each declaration, we try to \emph{erase} the fresh label $l$ from its type. If it is possible, ie if the label has a polymorphic or absent presence, the function/value/alias declared is added into the context and is available in the rest of the program, its type being cleaned from any local label. Otherwise, the function/value/alias is removed from the context.
 
-We note $A \uparrow_{l} A'$ if one can erase label $l$ from type $A$ and this will give type $A'$, and $A \downarrow_{l}$ if it is not possible to erase label $l$ from type $A$, ie if there exists no $A'$ such that $A \uparrow_{l} A'$. Below are the most interesting rules that define the erasure of a row type. The rest of the rules can be found in appendix \ref{sec:erasing-procedure}.
+We write $A \uparrow_{l} A'$ if one can erase label $l$ from type $A$ and this will give type $A'$, and $A \downarrow_{l}$ if it is not possible to erase label $l$ from type $A$, ie if there exists no $A'$ such that $A \uparrow_{l} A'$. Below are the most interesting rules that define the erasure of a row type. The rest of the rules can be found in appendix \ref{sec:erasing-procedure}.
 
 \begin{table}[h!]
   \centering
@@ -771,7 +771,7 @@ The user can define one or more local labels that will be bound in the scope wit
 He can use the local labels so defined in the scope as any other effect label but he cannot use them outside that scope.
 
 \paragraph{Solving pollution}
-This can be used to solve pollution issues by shadowing effects that would interfer with a local name.
+This can be used to solve pollution issues by shadowing effects that would interfere with a local name.
 
 \begin{lstlisting}[caption=Using local effects to avoid pollution]
   fresh `Fail {
@@ -779,7 +779,7 @@ This can be used to solve pollution issues by shadowing effects that would inter
     sig protect : (Comp(a, {`Fail:Zero, Fail:Zero | e})) -> Comp(a, {Fail{_}, `Fail:Zero|e})
     fun protect (m) () {
       handle (m()) {
-          case <Fail => k>-> k (do `Fail)
+          case <Fail => k> -> k (do `Fail)
       }
     }
 
@@ -823,13 +823,13 @@ There is one issue remaining. The effect aliases being inlined before type-check
   Type error: The local label `A<1> is not bound
   In expression: typename T = () -E-> ().
 \end{lstlisting}
-This is not really satisfying but should be fixed by improving effect aliases and giving them the same behavior as type aliases. Furthermore, this could not cause code that should not type-check to type-check since it is catch.
+This is not really satisfying but should be fixed by improving effect aliases and giving them the same behaviour as type aliases. Furthermore, this could not cause code that should not type-check to type-check since it is catch.
 
 \paragraph{Implementation}
-All labels in the code can be either global or local, have a name and the local ones have a unique id. Labels with a backtick are parsed into free local label and normal label are parsed into global ones. During desugaring, a newpass binds the local labels. During type-checking, when a !fresh ... { ... }! binding is encountered, we add the labels into the context and typecheck each declaration in the scope. Before that, the context should be clean from any label that will be shadowed by the fresh declaration (labels that have the same name). When leaving the scope, we clean the context from the local labels to avoid them to escape the scope. Moreover we check during typechecking if types do not contain unbound or shadowed labels.
+All labels in the code can be either global or local, have a name and the local ones have a unique id. Labels with a backtick are parsed into free local label and normal label are parsed into global ones. During desugaring, a new pass binds the local labels. During type-checking, when a !fresh ... { ... }! binding is encountered, we add the labels into the context and typecheck each declaration in the scope. Before that, the context should be clean from any label that will be shadowed by the fresh declaration (labels that have the same name). When leaving the scope, we clean the context from the local labels to avoid them to escape the scope. Moreover we check during typechecking if types do not contain unbound or shadowed labels.
 
 \begin{rem}
-  For now if all labels are internally of the same type and then can be local or global, the parser only accepts local labels in effect related things. If needed, this could be a way of improvement.
+  For now all labels used in different parts of Links (effect rows but also records, variants, etc.) are represented internally with the same construction so all of them could support local labels. However the parser only accepts local labels in effect related things. If needed, allowing all labels to be local could be a way of improvement.
 \end{rem}
 
 
@@ -996,12 +996,12 @@ We give extra typing rules for shallow and parameterised handlers.
 \begin{prooftree}
   \AxiomC{$\Delta;\Gamma \vdash m : B / R'$}
   \AxiomC{$\Delta;\Gamma, x:B \vdash n : A / R$}
-  \AxiomC{$R' = l_{i} : B_{i} \To A_{i} ; R_{0}$}
-  \AxiomC{$R = l_{i} : \theta ; R_{0}$}
+  \AxiomC{$R' = (l_{i} : B_{i} \To A_{i})_{i} ; R_{0}$}
+  \AxiomC{$R = (l_{i} : P_{i})_{i} ; R_{0}$}
   \noLine
-  \BinaryInfC{$\Delta;\Gamma, p_{i}:B_{i}, r_{i}:A_{i} \to_{R'} A \vdash n_{i} : A / R$}
+  \BinaryInfC{$\forall i,\; \Delta;\Gamma, p_{i}:B_{i}, r_{i}:A_{i} \to_{R'} A \vdash n_{i} : A / R$}
   \RightLabel{$ShallowHandle$}
-  \TrinaryInfC{$\Delta;\Gamma \vdash shallowhandle (m) \{ case\ x \mapsto n\ case \langle l_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : A / R$}
+  \TrinaryInfC{$\Delta;\Gamma \vdash shallowhandle (m) \{ case\ x \mapsto n\; (case \langle l_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i})_{i}\} : A / R$}
 \end{prooftree}
 
 \vspace{11pt}
@@ -1011,12 +1011,12 @@ We give extra typing rules for shallow and parameterised handlers.
   \AxiomC{$\Delta;\Gamma \vdash w : \gamma / R'$}
   \noLine
   \BinaryInfC{$\Delta;\Gamma, x:B, s:\gamma \vdash n : A / R$}
-  \AxiomC{$R' = l_{i} : B_{i} \To A_{i} ; R$}
-  \AxiomC{$R = l_{i} : \theta ; R_{0}$}
+  \AxiomC{$R' = (l_{i} : B_{i} \To A_{i})_{i} ; R$}
+  \AxiomC{$R = (l_{i} : P_{i})_{i} ; R_{0}$}
   \noLine
-  \BinaryInfC{$\Delta;\Gamma, s:\gamma, p_{i}:B_{i}, r_{i}:(A_{i},\gamma) \to_{R'} A \vdash n_{i} : A / R$}
+  \BinaryInfC{$\forall i,\; \Delta;\Gamma, s:\gamma, p_{i}:B_{i}, r_{i}:(A_{i},\gamma) \to_{R'} A \vdash n_{i} : A / R$}
   \RightLabel{$ParamHandle$}
-  \BinaryInfC{$\Delta;\Gamma \vdash handle (m) (s \from w) \{ case\ x \mapsto n\ case \langle l_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i}\} : A / R$}
+  \BinaryInfC{$\Delta;\Gamma \vdash handle (m) (s \from w) \{ case\ x \mapsto n\; (case \langle l_{i} (p_{i}) \To r_{i} \rangle \mapsto n_{i})_{i}\} : A / R$}
 \end{prooftree}
 
 \section{Erasing procedure}
